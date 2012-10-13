@@ -115,9 +115,6 @@ function markHouse(address){
     });
     mkr.desc = address.household;
     mkr.address = address;
-    //    gm.event.addListener(mkr, 'click', function(event) {
-    //        makeLeader(address, event.latLng)
-    //    });
     mkr.setVisible(true);
     markers.push(mkr);
     oms.addMarker(mkr);
