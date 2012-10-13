@@ -16,6 +16,7 @@
 var radius = 500;
 var markers = [];
 var circles = [];
+var districts = [];
 var gm = google.maps;
 var oms;
 var allAddresses;
@@ -35,6 +36,11 @@ function initialize() {
     $.getJSON('rest/list', function(data){
         allAddresses = data;
         plot();
+        for(var i=0; i<allAddresses.length; i++){
+            if(allAddresses[i].primary){
+                districts.push(allAddresses[i]);
+            }
+        }
     });
 }
 
@@ -55,12 +61,24 @@ function plot(){
         // find address
         var ad = getAddressFromList(marker.desc, allAddresses);
         var text = ad.primary?'Remove Leader':'Make Leader';
-        iw.setContent(marker.desc + " at " + ad.address + "<br><a onclick=\"javascript: makeLeader('" + ad.household + "');\">" + text + "</a>");
+        var content = marker.desc + " at " + ad.address + "<br><a onclick=\"javascript: makeLeader('" + ad.household + "');\">" + text + "</a><br>";
+        content += "<select id='districtselect'>";
+        for(var i=0;i<districts.length;i++){
+            var selected = "";
+            if(marker.address.district == i){
+                selected = " selected";
+            }
+            content += "<option value='" + i + "'" + selected + ">(" + i + ") " + districts[i].household + "</option>";
+        }
+        content += "</select><a onclick=\"javascript: assignDistrict('"
+            + marker.address.household
+            + "', document.getElementById('districtselect').selectedIndex)\">Change District</a>";
+        iw.setContent(content);
         iw.open(map, marker);
     });
     oms.addListener('spiderfy', function(markers) {
         for(var i = 0; i < markers.length; i ++) {
-            markers[i].setIcon(iconWithColor(spiderfiedColor));
+            markers[i].setIcon(iconWithColor(spiderfiedColor, markers[i].address.district));
             markers[i].setShadow(null);
         }
         iw.close();
@@ -88,7 +106,6 @@ function clearMarker(element){
 }
 
 function getAddress(address, index, array) {
-    //    console.log(address.household);
     if(address.primary){
         markLeader(new google.maps.LatLng(address.lat,address.lng));
     }
@@ -103,7 +120,6 @@ function markHouse(address){
         ll = new gm.LatLng(element.lat, element.lng);
         if(latlng.equals(ll) && element.household != address.household){
             color = 'cccccc';
-        //            console.log("Same address "+ address.household + " " + latlng.toString() + " as " + element.household + " " + ll.toString());
         }
     });
     var mkr = new gm.Marker({
@@ -139,6 +155,22 @@ function makeLeader(name){
     plotHouses(radius);
 }
 
+
+function assignDistrict(name, district){
+    var address = getAddressFromList(name, allAddresses);
+    address.district = district;
+    $.ajax({
+        type: 'POST',
+        url: "rest/list",
+        data: JSON.stringify(address),
+        contentType: 'application/json;charset=UTF-8',
+        success: function(data, textStatus, xhr){
+            alert(data);
+        }
+    });
+    plotHouses(radius);
+}
+
 function markLeader(latlng){
     var populationOptions = {
         strokeColor: '#FF0000',
@@ -150,22 +182,8 @@ function markLeader(latlng){
         center: latlng,
         radius: radius
     };
-    cityCircle = new gm.Circle(populationOptions);
-    circles.push(cityCircle);
-    allAddresses.forEach(test.bind(null, cityCircle) );
-    //    console.log("Leader:" + leader.household);
-    for(i=0;i<pe.length;i++){
-        //        console.log(pe[i].household);
-        }
-    pe = [];
-}
-var pe = [];
-
-function test(circle, element, index, array){
-    var ll = new gm.LatLng(element.lat,element.lng);
-    if(contains(circle, ll)){
-        pe.push(element);
-    }
+    circle = new gm.Circle(populationOptions);
+    circles.push(circle);
 }
 
 function contains(circle, latLng) {
