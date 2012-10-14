@@ -16,7 +16,6 @@
 package org.lds.disasterlocator.jpa;
 
 import java.io.Serializable;
-import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -29,21 +28,21 @@ import javax.persistence.Table;
 @Table(name="Member")
 public class Member implements Serializable {
 
+    @Override
+    public String toString() {
+        return "Member{" + "household=" + getHousehold() + ", address=" + getAddress() + ", city=" + getCity() + ", zip=" + getZip() + ", email=" + getEmail() + ", lat=" + getLat() + ", lng=" + getLng() + ", phone=" + getPhone() + ", district=" + getDistrict() + '}';
+    }
+
     @Id
     private String household;
     private String address;
-    @Column(name="prileader")
-    private boolean primary;
-    private boolean secondary;
     private String city;
     private String zip;
+    private String email;
+    private String lat;
+    private String lng;
+    private String phone;
     private int district;
-
-    @Override
-    public String toString() {
-        return "Member{" + "household=" + household + ", address=" + address + ", primary=" + primary + ", secondary=" + secondary + ", city=" + city + ", zip=" + zip + ", district=" + district + ", lat=" + lat + ", lng=" + lng + ", email=" + email + ", phone=" + phone + '}';
-    }
-
 
     @Override
     public int hashCode() {
@@ -66,10 +65,6 @@ public class Member implements Serializable {
         }
         return true;
     }
-    private String lat;
-    private String lng;
-    private String email;
-    private String phone;
 
     /**
      * @return the houseHold
@@ -97,20 +92,6 @@ public class Member implements Serializable {
      */
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    /**
-     * @return the leader
-     */
-    public boolean isPrimary() {
-        return primary;
-    }
-
-    /**
-     * @param leader the leader to set
-     */
-    public void setPrimary(boolean leader) {
-        this.primary = leader;
     }
 
     /**
@@ -216,19 +197,5 @@ public class Member implements Serializable {
      */
     public void setDistrict(int district) {
         this.district = district;
-    }
-
-    /**
-     * @return the secondary
-     */
-    public boolean isSecondary() {
-        return secondary;
-    }
-
-    /**
-     * @param secondary the secondary to set
-     */
-    public void setSecondary(boolean secondary) {
-        this.secondary = secondary;
     }
 }
