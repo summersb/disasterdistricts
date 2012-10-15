@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,10 +21,14 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.util.ArrayList;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.codehaus.jackson.annotate.JsonAutoDetect;
+import org.codehaus.jackson.annotate.JsonMethod;
+import org.codehaus.jackson.map.DeserializationConfig;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.lds.disasterlocator.rest.json.Geo;
 
 /**
  *
@@ -52,7 +56,6 @@ public class Csv2Json {
                     lastPos = pos + 2;
                     pos++;
                     inQuote = false;
-                    System.out.println(tokens.get(tokens.size() - 1));
                 } else if (toCharArray[pos] == '"') {
                     inQuote = true;
                     lastPos++;
@@ -63,28 +66,36 @@ public class Csv2Json {
                         tokens.add(line.substring(lastPos, pos));
                     }
                     lastPos = pos + 1;
-                    System.out.println(tokens.get(tokens.size() - 1));
                 }
             }
             String add = tokens.get(3);
-            String[] latLng = null;
-            if ((!"unknown".equals(add) && !add.isEmpty())) {
-                latLng = getLatLong(add, tokens.get(4), tokens.get(6));
+            Geo geo = getGeo(add, tokens.get(4), tokens.get(6));
+            if(geo.getStatus().getCode() != 200){
+                System.err.println("Error getting address for " + tokens.get(2));
+                System.err.println(geo);
+            }
+            if(geo.getStatus().getCode() == 200 && geo.getPlacemark().size() != 1){
+                System.err.println("Found to many address for " + tokens.get(2));
+                System.err.println(geo);
             }
             // write out
             fos.write("{\"household\":\"".getBytes());
             fos.write(tokens.get(2).getBytes());
             fos.write("\",\"leader\":false,\"address\":\"".getBytes());
-            fos.write(tokens.get(3).getBytes());
+            if(geo.getStatus().getCode() == 200){
+                fos.write(geo.getPlacemark().get(0).getAddress().getBytes());
+            }else{
+                fos.write(tokens.get(3).getBytes());
+            }
             fos.write("\",\"lat\":\"".getBytes());
-            if (latLng != null) {
-                fos.write(latLng[1].trim().getBytes());
+            if(geo.getStatus().getCode() == 200){
+                fos.write(Double.toString(geo.getPlacemark().get(0).getPoint().getCoordinates().get(1)).getBytes());
             } else {
                 fos.write(tokens.get(1).getBytes());
             }
             fos.write("\",\"lng\":\"".trim().getBytes());
-            if (latLng != null) {
-                fos.write(latLng[0].trim().getBytes());
+            if(geo.getStatus().getCode() == 200){
+                fos.write(Double.toString(geo.getPlacemark().get(0).getPoint().getCoordinates().get(0)).getBytes());
             } else {
                 fos.write(tokens.get(0).getBytes());
             }
@@ -104,25 +115,16 @@ public class Csv2Json {
         fos.close();
     }
 
-    private static String[] getLatLong(String address, String city, String zip) throws Exception {
-        System.out.println("Getting address for " + address);
+    private static Geo getGeo(String address, String city, String zip) throws Exception {
         String fullAddress = address + "," + city + "," + zip;
         DefaultHttpClient hc = new DefaultHttpClient();
         HttpGet post = new HttpGet("http://maps.google.com/maps/geo?q='" + fullAddress.replace(" ", "%20") + "'");//&output=csv");
         HttpResponse response = hc.execute(post);
         InputStream is = response.getEntity().getContent();
-        String body = IOUtils.toString(is);
+        ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY);
+        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        Geo geo = mapper.readValue(is, Geo.class);
         is.close();
-        System.out.println(body);
-//        return body;
-        if (body.indexOf("coordinates") == -1) {
-            return null;
-        }
-        String latLng = body.substring(body.indexOf("coordinates") + 15, body.indexOf("]", body.indexOf("coordinates")));
-        String[] split1 = latLng.split(",");
-        String[] split = new String[2];
-        split[0] = split1[0];
-        split[1] = split1[1];
-        return split;
+        return geo;
     }
 }

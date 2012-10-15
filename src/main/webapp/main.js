@@ -64,6 +64,7 @@ function plot(){
         var content = marker.desc + " at " + ad.address + "<br>";
         var district = getDistrict(ad.district);
         content += "District Leader is " + district.leader.household + "<br>";
+        content += "District Assistant is " + district.assistant?district.assistant.household:"None" + "<br>";
 
         // assign as leader
         content += "<a onclick=\"javascript: assignLeader('"
@@ -238,17 +239,6 @@ function showAssistant(){
     }
 }
 
-function contains(circle, latLng) {
-    var insideBounds = circle.getBounds().contains(latLng);
-    var dist;
-    if(gm.geometry.spherical.computeDistanceBetween(circle.getCenter(), latLng) <= circle.getRadius()){
-        dist = true;
-    }else{
-        dist = false;
-    }
-    return insideBounds && dist;
-}
-
 function getAddressFromList(name, list){
     for(var i=0;i<list.length; i++){
         if(list[i].household == name){
@@ -265,46 +255,4 @@ function getDistrict(id){
         }
     }
     return null;
-}
-
-function createDistricts(){
-    // extract leaders
-    var leaders = [];
-    for(var i=0; i<allAddresses.length; i++){
-        if(allAddresses[i].primary){
-            allAddresses[i].district = i;
-            leaders.push(new gm.LatLng(allAddresses[i].lat, allAddresses[i].lng));
-        }
-    }
-    // for each house compute closest leader
-
-    for(i=0; i<allAddresses.length; i++){
-        var distance = [];
-        for(var j=0; j<leaders.length; j++){
-            // compute dist
-            if(allAddresses[i].lat){
-                var ll = new gm.LatLng(allAddresses[i].lat, allAddresses[i].lng);
-                var dis = gm.geometry.spherical.computeDistanceBetween(ll, leaders[j]);
-                distance.push(dis);
-            }
-        }
-        var pos = 0;
-        for(j=1; j<distance.length; j++){
-            if(distance[j]<distance[pos]){
-                pos = j;
-            }
-        }
-        allAddresses[i].district = pos;
-    }
-    for(i=0; i<allAddresses.length; i++){
-        $.ajax({
-            type: 'POST',
-            url: "rest/member",
-            data: JSON.stringify(allAddresses[i]),
-            contentType: 'application/json;charset=UTF-8',
-            success: function(data, textStatus, xhr){
-                alert(data);
-            }
-        });
-    }
 }

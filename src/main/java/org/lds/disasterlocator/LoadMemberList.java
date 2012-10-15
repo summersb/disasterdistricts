@@ -13,54 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.lds.disasterlocator.rest;
+package org.lds.disasterlocator;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Query;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.lds.disasterlocator.jpa.Member;
+import org.lds.disasterlocator.rest.EntityManagerFactoryHelper;
 
 /**
  *
  * @author Bert W Summers
  */
-@Path("/load")
-@Produces("text/plain")
 public class LoadMemberList {
 
-    private final static Logger logger = Logger.getLogger(LoadMemberList.class.getName());
     private final EntityManagerFactory emf;
 
     public LoadMemberList() {
         emf = EntityManagerFactoryHelper.createEntityManagerFactory();
     }
 
-    @GET
-    public String loadList() throws IOException {
+    public String loadList(InputStream is) throws IOException {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
         // delete all entities
         Query q = em.createQuery("delete from Member m");
         q.executeUpdate();
 
-        InputStream resourceAsStream = this.getClass().getResourceAsStream("/members.js");
         ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY);
         mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        Member[] mem = mapper.readValue(resourceAsStream, Member[].class);
+        Member[] mem = mapper.readValue(is, Member[].class);
         for (Member member : mem) {
             em.persist(member);
         }
         em.getTransaction().commit();
         return "OK";
+    }
+
+    public static void main(String[] args) throws Exception{
+        new LoadMemberList().loadList(new FileInputStream(new File("members.js")));
     }
 }

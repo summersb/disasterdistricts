@@ -95,7 +95,7 @@ public class MemberList {
     }
 
     @POST
-    public String makeLeader(Member member) throws MalformedURLException {
+    public String updateMember(Member member) throws MalformedURLException {
         EntityManager em = emf.createEntityManager();
         System.out.println(member);
         em.getTransaction().begin();
