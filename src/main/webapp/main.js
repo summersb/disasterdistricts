@@ -63,8 +63,10 @@ function plot(){
         var ad = marker.address;
         var content = marker.desc + " at " + ad.address + "<br>";
         var district = getDistrict(ad.district);
-        content += "District Leader is " + district.leader.household + "<br>";
-        content += "District Assistant is " + district.assistant?district.assistant.household:"None" + "<br>";
+        if(district){
+            content += "District Leader is " + (district.leader?district.leader.household:"None") + "<br>";
+            content += "District Assistant is " + (district.assistant?district.assistant.household:"None") + "<br>";
+        }
 
         // assign as leader
         content += "<a onclick=\"javascript: assignLeader('"
@@ -178,7 +180,7 @@ function assignDistrict(name, id){
     var district = getDistrict(address.district);
     address.district = id;
     $.ajax({
-        type: 'POST',
+        type: 'PUT',
         url: "rest/member",
         data: JSON.stringify(address),
         contentType: 'application/json;charset=UTF-8',

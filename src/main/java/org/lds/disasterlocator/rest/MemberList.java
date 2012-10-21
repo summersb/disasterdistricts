@@ -16,7 +16,6 @@
 package org.lds.disasterlocator.rest;
 
 import org.lds.disasterlocator.jpa.Member;
-import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -25,11 +24,21 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.lds.disasterlocator.Csv2Json;
 import org.lds.disasterlocator.jpa.District;
+import org.lds.disasterlocator.rest.json.AdministrativeArea;
+import org.lds.disasterlocator.rest.json.Country;
+import org.lds.disasterlocator.rest.json.Geo;
+import org.lds.disasterlocator.rest.json.Locality;
+import org.lds.disasterlocator.rest.json.Placemark;
+import org.lds.disasterlocator.rest.json.SubAdministrativeArea;
 
 /**
  *
@@ -84,28 +93,47 @@ public class MemberList {
             sb.append(member.getZip()).append(",");
             sb.append(member.getPhone()).append(",");
             sb.append(member.getEmail()).append(",");
-            sb.append("\"").append(district.get(member.getDistrict()).getLeader().getHousehold()).append("\",");
-            Member assist = district.get(member.getDistrict()).getAssistant();
-            if (assist != null) {
-                sb.append("\"").append(assist.getHousehold()).append("\"");
+            District dist = district.get(member.getDistrict());
+            if (dist != null && dist.getLeader() != null) {
+                sb.append("\"").append(district.get(member.getDistrict()).getLeader().getHousehold()).append("\"");
+            }
+            sb.append(",");
+            if (dist != null && dist.getAssistant() != null) {
+                Member assist = dist.getAssistant();
+                if (assist != null) {
+                    sb.append("\"").append(assist.getHousehold()).append("\"");
+                }
             }
             sb.append("\n");
         }
         return sb.toString();
     }
 
-    @POST
-    public String updateMember(Member member) throws MalformedURLException {
+    @PUT
+    public Response updateMember(Member member) throws Exception {
         EntityManager em = emf.createEntityManager();
-        System.out.println(member);
         em.getTransaction().begin();
         Member find = em.find(Member.class, member.getHousehold());
         if (find != null) {
+            if (!find.getAddress().equals(member.getAddress())) {
+                // run google geo query to get full address
+                Geo geo = Csv2Json.getGeo(member.getAddress());
+                Placemark placemark = geo.getPlacemark().get(0);
+                member.setAddress(placemark.getAddress());
+                Country country = placemark.getAddressDetails().getCountry();
+                AdministrativeArea administrativeArea = country.getAdministrativeArea();
+                SubAdministrativeArea subAdministrativeArea = administrativeArea.getSubAdministrativeArea();
+                Locality locatity = subAdministrativeArea.getLocality();
+                member.setCity(locatity.getLocalityName());
+                member.setZip(locatity.getPostalCode().getPostalCodeNumber());
+            }
+            // save to server
             em.merge(member);
         } else {
-            em.persist(member);
+            throw new WebApplicationException(Status.NOT_FOUND);
         }
         em.getTransaction().commit();
-        return "OK";
+
+        return Response.ok().build();
     }
 }

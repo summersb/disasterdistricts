@@ -39,6 +39,7 @@ import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.lds.disasterlocator.GoogleGeoSimulator;
 import org.lds.disasterlocator.jpa.District;
 import org.lds.disasterlocator.jpa.Member;
 import org.lds.disasterlocator.rest.json.DistanceMatrixResponse;
@@ -111,28 +112,53 @@ public class DistrictList {
 
     @POST
     @Path("create")
-    public Response createDistricts(List<DistrictCreateRequestContainer> request) throws IOException, InterruptedException {
+    public Response createDistricts(List<DistrictCreateRequestContainer> request) throws IOException, InterruptedException, Exception {
         MemberList memberList = new MemberList();
         List<Member> wardList = memberList.getWardList();
+        // reset district
+        for (Member member : wardList) {
+            member.setDistrict(-1);
+        }
         HashMap<Integer, DistanceMatrixResponse> distances = getDistanceMatrix(request);
         computeClosestLeader(wardList, distances);
 
         for (Member member : wardList) {
             memberList.updateMember(member);
         }
+        // make sure leader and assistant are assigned
+        List<District> district = getDistrict();
+        for (District d : district) {
+            if (d.getLeader() != null) {
+                d.getLeader().setDistrict(d.getId());
+            }
+            if (d.getAssistant() != null) {
+                d.getAssistant().setDistrict(d.getId());
+            }
+            storeDistrict(d);
+        }
+
         return Response.ok().build();
     }
 
     private DistanceMatrixResponse getDistanceRequest(StringBuilder sb) throws IllegalStateException, IOException {
-        DefaultHttpClient hc = new DefaultHttpClient();
-        HttpGet post = new HttpGet(sb.toString());
-        HttpResponse response = hc.execute(post);
-        InputStream is = response.getEntity().getContent();
+        String data = GoogleGeoSimulator.getUrl(sb.toString());
+        if (data == null) {
+            DefaultHttpClient hc = new DefaultHttpClient();
+            HttpGet post = new HttpGet(sb.toString());
+            HttpResponse response = hc.execute(post);
+            InputStream is = response.getEntity().getContent();
+            data = IOUtils.toString(is);
+            is.close();
+            ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY);
+            mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            DistanceMatrixResponse dmr = mapper.readValue(IOUtils.toInputStream(data), DistanceMatrixResponse.class);
+            if(dmr.getStatus().equals("OK")){
+                GoogleGeoSimulator.storeUrl(sb.toString(), data);
+            }
+        }
         ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY);
         mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        String body = IOUtils.toString(is);
-        is.close();
-        DistanceMatrixResponse dmr = mapper.readValue(IOUtils.toInputStream(body), DistanceMatrixResponse.class);
+        DistanceMatrixResponse dmr = mapper.readValue(IOUtils.toInputStream(data), DistanceMatrixResponse.class);
         return dmr;
     }
 
@@ -185,6 +211,7 @@ public class DistrictList {
     private HashMap<Integer, DistanceMatrixResponse> getDistanceMatrix(List<DistrictCreateRequestContainer> request) throws IOException, IllegalStateException, InterruptedException {
         HashMap<Integer, DistanceMatrixResponse> distances = new HashMap<Integer, DistanceMatrixResponse>();
 
+        int count = 0;
         for (DistrictCreateRequestContainer districtCreateRequestContainer : request) {
             StringBuilder sb = new StringBuilder("http://maps.googleapis.com/maps/api/distancematrix/json?origins=");
             sb.append(URLEncoder.encode(districtCreateRequestContainer.getLeader().getAddress(), "UTF-8")).append(",");
@@ -200,12 +227,13 @@ public class DistrictList {
             } else {
                 // to many requests per second, wait 10 seconds and retry
                 while (dmr.getStatus().equals("OK") == false) {
-                    System.out.println("To many requests, pausing " + dmr.getStatus());
+                    System.out.println("To many requests, pausing " + dmr.getStatus() + ": Request " + count);
                     Thread.sleep(10000);
                     dmr = getDistanceRequest(sb);
                 }
                 distances.put(districtCreateRequestContainer.getLeader().getDistrict(), dmr);
             }
+            count++;
         }
         return distances;
     }
@@ -213,30 +241,20 @@ public class DistrictList {
     private void computeClosestLeader(List<Member> wardList, HashMap<Integer, DistanceMatrixResponse> distances) {
         // for each member compute closest leader
         for (Member member : wardList) {
+            if(member.getDistrict() != -1){
+                continue;
+            }
             HashMap<Integer, Integer> distMap = getDistanceToLeaders(distances, member);
             // dump out distance map
             System.out.println("Distance map for " + member.getHousehold());
             for (Integer integer : distMap.keySet()) {
-                System.out.println(integer + ":" + distMap.get(integer));
+                System.out.println("\t" + integer + ":" + distMap.get(integer));
             }
             int district = getClosestDistrict(distMap);
-            if(district != -1){
-                System.out.println("Setting " + member.getHousehold() + "\n to district " + district);
+            if (district != -1) {
+                System.out.println("Setting " + member.getHousehold() + " to district " + district);
             }
             member.setDistrict(district);
-            // remove member from all other lists
-            for (Integer integer : distances.keySet()) {
-                DistanceMatrixResponse dmr = distances.get(integer);
-                List<String> destAddresses = dmr.getDestination_addresses();
-                for (int i = 0; i < destAddresses.size(); i++) {
-                    if (destAddresses.get(i).equals(member.getAddress())) {
-                        destAddresses.remove(i);
-                        dmr.getRows().get(0).getElements().remove(i);
-                        // start over as list has changed
-                        i = 0;
-                    }
-                }
-            }
         }
     }
 }

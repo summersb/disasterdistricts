@@ -19,7 +19,7 @@ package org.lds.disasterlocator.rest.json;
  *
  * @author Bert W Summers
  */
-public class Locatity {
+public class Locality {
 private String LocalityName;
 private PostalCode PostalCode;
 private Thoroughfare Thoroughfare;

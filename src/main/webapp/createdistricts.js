@@ -57,7 +57,7 @@ function createDistricts(){
 
 function assignToDistricts(){
     var distConfig = [];
-    for(var i=0; i<5; i++){
+    for(var i=0; i<districts.length; i++){
         var dist = districts[i];
         // get all members within 1km of leader
         var distMembers = getMembersInDistrict(dist);
@@ -95,12 +95,28 @@ function getMembersWithIn(leader, distance){
             // skip the leader
             continue;
         }
+        if(isLeader(ad)){
+            // skip leader of another district
+            continue;
+        }
         var ll = new gm.LatLng(ad.lat, ad.lng);
         if(gm.geometry.spherical.computeDistanceBetween(circle.getCenter(), ll) <= circle.getRadius()){
             members.push(ad);
         }
     }
     return members;
+}
+
+function isLeader(address){
+   for(var i=0;i<districts.length; i++){
+       var dl = districts[i].leader;
+       var al = districts[i].assistant;
+       if(address.household == dl?dl.household:undefined
+       || address.household == al?al.household:undefined){
+           return true;
+       }
+   }
+   return false;
 }
 
 function contains(circle, latLng) {
@@ -117,7 +133,7 @@ function contains(circle, latLng) {
 function getMembersInDistrict(dist){
     var radius = 500;
     var distMembers = getMembersWithIn(dist.leader, radius);
-    while(distMembers.length < 15){
+    while(distMembers.length < 25){
         radius = radius + 100;
         distMembers = getMembersWithIn(dist.leader, radius);
     }

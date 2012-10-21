@@ -13,22 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+var memberList = [];
 function initialize(){
-    $.getJSON('rest/list', function(data){
+    $.getJSON('rest/member/list', function(data){
         show(data);
+        memberList = data;
     });
 }
 
 function show(address){
-    body = '<table border="1">';
+    body = '<table class="sortable" border="1" id="table"><thead><tr><th>District ID</th><th>Household</th><th>Address</th><th>Lat</th><th>Long</th><th>Update</th></tr></thead><tbody>';
     for(var i=0; i<address.length; i++){
         body += '<tr><td>' + address[i].district
-            + '</td><td>' + address[i].household
-            + '</td><td>' + address[i].address
-            + '</td><td>' + address[i].lat
-            + '</td><td>' + address[i].lng
-            + '</td></tr>';
+        + '</td><td>' + address[i].household
+        + '</td><td><input id="'
+        + address[i].household
+        + '" size=75 type="text" name="address" value="' + address[i].address
+        + '"></input></td><td>' + address[i].lat
+        + '</td><td>' + address[i].lng
+        + '</td><td><input type="button" value="Update" onclick="updateAddress(\''
+        + address[i].household
+        + '\', document.getElementById(\'' + address[i].household + '\'))"/>'
+        + '</td></tr>';
     }
-    body += '</table>';
+    body += '</tbody></table>';
     $('#body').append(body);
+    var table = document.getElementById("table");
+    sorttable.makeSortable(table);
+}
+
+function updateAddress(household, input){
+    for (var i = 0; i < memberList.length; i++) {
+        if(memberList[i].household == household){
+            memberList[i].address = input.value;
+            $.ajax({
+                type: "PUT",
+                url: "rest/member",
+                data: JSON.stringify(memberList[i]),
+                contentType: 'application/json;charset=UTF-8',
+                success: function(data, textStatus, xhr){
+                    alert("saved address");
+                }
+            });
+        }
+    }
 }

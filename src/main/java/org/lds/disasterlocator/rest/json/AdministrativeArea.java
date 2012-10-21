@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,14 +20,20 @@ package org.lds.disasterlocator.rest.json;
  * @author Bert W Summers
  */
 public class AdministrativeArea {
-private String AdministrativeAreaName;
-private Locatity Locatity;
+
+    private String AdministrativeAreaName;
+    private SubAdministrativeArea SubAdministrativeArea;
 
     /**
      * @return the administrativeAreaName
      */
     public String getAdministrativeAreaName() {
         return AdministrativeAreaName;
+    }
+
+    @Override
+    public String toString() {
+        return "AdministrativeArea{" + "AdministrativeAreaName=" + AdministrativeAreaName + ", SubAdministrativeArea=" + SubAdministrativeArea + '}';
     }
 
     /**
@@ -38,21 +44,16 @@ private Locatity Locatity;
     }
 
     /**
-     * @return the locatity
+     * @return the SubAdministrativeArea
      */
-    public Locatity getLocatity() {
-        return Locatity;
+    public SubAdministrativeArea getSubAdministrativeArea() {
+        return SubAdministrativeArea;
     }
 
     /**
-     * @param locatity the locatity to set
+     * @param SubAdministrativeArea the SubAdministrativeArea to set
      */
-    public void setLocatity(Locatity locatity) {
-        this.Locatity = locatity;
-    }
-
-    @Override
-    public String toString() {
-        return "AdministrativeArea{" + "administrativeAreaName=" + AdministrativeAreaName + ", locatity=" + Locatity + '}';
+    public void setSubAdministrativeArea(SubAdministrativeArea SubAdministrativeArea) {
+        this.SubAdministrativeArea = SubAdministrativeArea;
     }
 }

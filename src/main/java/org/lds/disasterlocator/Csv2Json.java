@@ -117,6 +117,10 @@ public class Csv2Json {
 
     private static Geo getGeo(String address, String city, String zip) throws Exception {
         String fullAddress = address + "," + city + "," + zip;
+        return getGeo(fullAddress);
+    }
+
+    public static Geo getGeo(String fullAddress) throws Exception{
         DefaultHttpClient hc = new DefaultHttpClient();
         HttpGet post = new HttpGet("http://maps.google.com/maps/geo?q='" + fullAddress.replace(" ", "%20") + "'");//&output=csv");
         HttpResponse response = hc.execute(post);
