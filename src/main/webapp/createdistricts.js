@@ -61,7 +61,7 @@ function assignToDistricts(){
         var dist = districts[i];
         // get all members within 1km of leader
         var distMembers = getMembersInDistrict(dist);
-        if(distMembers.length == 0){
+        if(distMembers.length === 0){
             continue;
         }
 
@@ -91,7 +91,7 @@ function getMembersWithIn(leader, distance){
     var members = [];
     for(var i=0; i<allAddresses.length; i++){
         var ad = allAddresses[i];
-        if(ad.household == leader.household){
+        if(ad.household === leader.household){
             // skip the leader
             continue;
         }
@@ -111,8 +111,8 @@ function isLeader(address){
    for(var i=0;i<districts.length; i++){
        var dl = districts[i].leader;
        var al = districts[i].assistant;
-       if(address.household == dl?dl.household:undefined
-       || address.household == al?al.household:undefined){
+       if(address.household === dl?dl.household:undefined
+       || address.household === al?al.household:undefined){
            return true;
        }
    }

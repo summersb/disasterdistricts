@@ -1,17 +1,17 @@
 /**
  * Copyright (C) 2012
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.lds.disasterlocator.rest;
 
@@ -78,6 +78,12 @@ public class DistrictList {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
         District find = em.find(District.class, district.getId());
+        Member leader = em.find(Member.class, district.getLeader().getHousehold());
+        leader.setDistrict(district.getId());
+        Member assists = em.find(Member.class, district.getAssistant().getHousehold());
+        assists.setDistrict(district.getId());
+        district.setLeader(leader);
+        district.setAssistant(assists);
         if (find != null) {
             em.merge(district);
         } else {
@@ -152,7 +158,7 @@ public class DistrictList {
             ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY);
             mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             DistanceMatrixResponse dmr = mapper.readValue(IOUtils.toInputStream(data), DistanceMatrixResponse.class);
-            if(dmr.getStatus().equals("OK")){
+            if (dmr.getStatus().equals("OK")) {
                 GoogleGeoSimulator.storeUrl(sb.toString(), data);
             }
         }
@@ -209,7 +215,7 @@ public class DistrictList {
     }
 
     private HashMap<Integer, DistanceMatrixResponse> getDistanceMatrix(List<DistrictCreateRequestContainer> request) throws IOException, IllegalStateException, InterruptedException {
-        HashMap<Integer, DistanceMatrixResponse> distances = new HashMap<Integer, DistanceMatrixResponse>();
+        HashMap<Integer, DistanceMatrixResponse> distances = new HashMap<>();
 
         int count = 0;
         for (DistrictCreateRequestContainer districtCreateRequestContainer : request) {
@@ -241,7 +247,7 @@ public class DistrictList {
     private void computeClosestLeader(List<Member> wardList, HashMap<Integer, DistanceMatrixResponse> distances) {
         // for each member compute closest leader
         for (Member member : wardList) {
-            if(member.getDistrict() != -1){
+            if (member.getDistrict() != -1) {
                 continue;
             }
             HashMap<Integer, Integer> distMap = getDistanceToLeaders(distances, member);
@@ -256,5 +262,16 @@ public class DistrictList {
             }
             member.setDistrict(district);
         }
+    }
+
+    public static void main(String[] args) throws IOException {
+        String dist = "{\"id\":0, \"leader\":{\"household\":\"Aguilar, Jennifer\",\"address\":\"1242 Barbara Drive, Vista, CA 92084, USA\",\"city\":null,\"zip\":null,\"email\":\"\",\"lat\":\"33.18710\",\"lng\":\"-117.2176550\",\"phone\":\"760-724-9179\",\"district\":-1}"
+                + ",\"assistant\":{\"household\":\"Alexander, Samantha Ann Turbyville\",\"address\":\"1371 Barbara Drive, Vista, CA 92084, USA\",\"city\":null,\"zip\":null,\"email\":\"\",\"lat\":\"33.184610\",\"lng\":\"-117.2179820\",\"phone\":\"\",\"district\":-1}}";
+        ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY);
+        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        District dmr = mapper.readValue(IOUtils.toInputStream(dist), District.class);
+        System.out.println(dmr.getId());
+        System.out.println(dmr.getLeader().getHousehold());
+        System.out.println(dmr.getAssistant().getHousehold());
     }
 }

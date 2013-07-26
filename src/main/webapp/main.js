@@ -25,7 +25,7 @@ var usualColor = 'eebb22';
 var spiderfiedColor = 'ffee22';
 var iconWithColor = function(color, number) {
     return 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=' + number + '|' + color + '|000000';
-}
+};
 var shadow = new gm.MarkerImage(
     'https://www.google.com/intl/en_ALL/mapfiles/shadow50.png',
     new gm.Size(37, 34),  // size   - for sprite clipping
@@ -68,15 +68,16 @@ function plot(){
             content += "District Assistant is " + (district.assistant?district.assistant.household:"None") + "<br>";
         }
 
-        // assign as leader
-        content += "<a onclick=\"javascript: assignLeader('"
-        + marker.address.household
-        + "', " + district.id + ")\">Assign as Leader</a><br>";
-        // assign as assistant
-        content += "<a onclick=\"javascript: assignAssistant('"
-        + marker.address.household
-        + "', " + district.id + ")\">Assign as Assistant</a><br>";
-
+        if(district){
+            // assign as leader
+            content += "<a onclick=\"javascript: assignLeader('"
+            + marker.address.household
+            + "', " + district.id + ")\">Assign as Leader</a><br>";
+            // assign as assistant
+            content += "<a onclick=\"javascript: assignAssistant('"
+            + marker.address.household
+            + "', " + district.id + ")\">Assign as Assistant</a><br>";
+        }
         // change district
         content += "<a onclick=\"javascript: assignDistrict('"
         + marker.address.household
@@ -84,7 +85,7 @@ function plot(){
         content += "<select id='districtselect'>";
         for(var i=0;i<districts.length;i++){
             var selected = "";
-            if(marker.address.district == districts[i].id){
+            if(marker.address.district === districts[i].id){
                 selected = " selected";
             }
             content += "<option value='" + districts[i].id + "'" + selected + ">("
@@ -129,7 +130,7 @@ function markHouse(address){
     var color = usualColor;
     allAddresses.forEach(function(element){
         ll = new gm.LatLng(element.lat, element.lng);
-        if(latlng.equals(ll) && element.household != address.household){
+        if(latlng.equals(ll) && element.household !== address.household){
             color = 'cccccc';
         }
     });
@@ -187,12 +188,12 @@ function assignDistrict(name, id){
         success: function(data, textStatus, xhr){
         }
     });
-    if(district != null){
+    if(district !== null){
         // undo if leader or assistant
-        if(district.leader != null && district.leader.household == address.household){
+        if(district.leader !== null && district.leader.household === address.household){
             district.leader = null;
             postDistrict(district);
-        }else if(district.assistant != null && district.assistant.household == address.household){
+        }else if(district.assistant !== null && district.assistant.household === address.household){
             district.assistant = null;
             postDistrict(district);
         }
@@ -222,7 +223,7 @@ function showLeader(){
 
 function showAssistant(){
     for(var i=0;i<districts.length;i++){
-        if(districts[i].assistant == null){
+        if(districts[i].assistant === null){
             continue;
         }
         var latlng = new gm.LatLng(districts[i].assistant.lat, districts[i].assistant.lng);
@@ -243,7 +244,7 @@ function showAssistant(){
 
 function getAddressFromList(name, list){
     for(var i=0;i<list.length; i++){
-        if(list[i].household == name){
+        if(list[i].household === name){
             return list[i];
         }
     }
@@ -252,7 +253,7 @@ function getAddressFromList(name, list){
 
 function getDistrict(id){
     for(var i=0;i<districts.length; i++){
-        if(districts[i].id == id){
+        if(districts[i].id === id){
             return districts[i];
         }
     }

@@ -44,7 +44,7 @@ function show(address){
 
 function updateAddress(household, input){
     for (var i = 0; i < memberList.length; i++) {
-        if(memberList[i].household == household){
+        if(memberList[i].household === household){
             memberList[i].address = input.value;
             $.ajax({
                 type: "PUT",

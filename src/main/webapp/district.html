@@ -34,7 +34,15 @@
                 cursor: default;
             }</style>
     </head>
-    <body onload="initialize()">
+    <body onload="initialize();">
+        <div id="create">
+            <form id="createdistrict" onsubmit="createDistrict();return false;">
+                District Number:<input id="createdistid" type="text" name="number"/>
+                Leader:<select id="distLeader" name="leader" form="createdistrict"></select>
+                Assistant Leader:<select id="distAssistLeader" name="assistLeader" form="createdistrict"></select>
+                <input type="submit" value="Create"/>
+            </form>
+        </div>
         <div id="body" style="width:100%; height:100%"></div>
     </body>
 </html>

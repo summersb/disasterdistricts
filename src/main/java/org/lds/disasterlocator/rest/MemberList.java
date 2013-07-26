@@ -33,12 +33,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.lds.disasterlocator.Csv2Json;
 import org.lds.disasterlocator.jpa.District;
-import org.lds.disasterlocator.rest.json.AdministrativeArea;
-import org.lds.disasterlocator.rest.json.Country;
-import org.lds.disasterlocator.rest.json.Geo;
-import org.lds.disasterlocator.rest.json.Locality;
-import org.lds.disasterlocator.rest.json.Placemark;
-import org.lds.disasterlocator.rest.json.SubAdministrativeArea;
+import org.lds.disasterlocator.rest.json.model.GeocodeResponse;
 
 /**
  *
@@ -117,15 +112,10 @@ public class MemberList {
         if (find != null) {
             if (!find.getAddress().equals(member.getAddress())) {
                 // run google geo query to get full address
-                Geo geo = Csv2Json.getGeo(member.getAddress());
-                Placemark placemark = geo.getPlacemark().get(0);
-                member.setAddress(placemark.getAddress());
-                Country country = placemark.getAddressDetails().getCountry();
-                AdministrativeArea administrativeArea = country.getAdministrativeArea();
-                SubAdministrativeArea subAdministrativeArea = administrativeArea.getSubAdministrativeArea();
-                Locality locatity = subAdministrativeArea.getLocality();
-                member.setCity(locatity.getLocalityName());
-                member.setZip(locatity.getPostalCode().getPostalCodeNumber());
+                GeocodeResponse geo = Csv2Json.getGeo(member.getAddress());
+                member.setAddress(geo.getResults()[0].getFormattedAddress());
+//                member.setCity(locatity.getLocalityName());
+//                member.setZip(locatity.getPostalCode().getPostalCodeNumber());
             }
             // save to server
             em.merge(member);
