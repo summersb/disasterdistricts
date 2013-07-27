@@ -78,6 +78,10 @@ function plot(){
             + marker.address.household
             + "', " + district.id + ")\">Assign as Assistant</a><br>";
         }
+        // add link to create a new district
+        content += "<a onclick=\"javascript: createNewDistrict('" + 
+                marker.address.household + "')\">Create New District</a><br>";
+        
         // change district
         content += "<a onclick=\"javascript: assignDistrict('"
         + marker.address.household
@@ -174,6 +178,20 @@ function postDistrict(district){
     plotHouses(radius);
     showLeader();
     showAssistant();
+}
+
+function createNewDistrict(leader){
+    $.ajax({
+        type: 'POST',
+        url: "rest/district/create/" + leader,
+        success: function(data, textStatus, xhr){
+            districts.push(data);
+            var address = getAddressFromList(leader, allAddresses);
+            address.district = data.id;
+            plotHouses(radius);
+            showLeader();
+        }
+    });
 }
 
 function assignDistrict(name, id){

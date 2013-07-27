@@ -28,6 +28,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -74,21 +75,43 @@ public class DistrictList {
     }
 
     @POST
-    public Response storeDistrict(District district) {
+    @Path("/create/{leader}")
+    @Consumes(MediaType.WILDCARD)
+    public District createNewDistrict(@PathParam("leader") String leaderHousehold) {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
-        District find = em.find(District.class, district.getId());
-        Member leader = em.find(Member.class, district.getLeader().getHousehold());
-        leader.setDistrict(district.getId());
-        Member assists = em.find(Member.class, district.getAssistant().getHousehold());
-        assists.setDistrict(district.getId());
-        district.setLeader(leader);
-        district.setAssistant(assists);
-        if (find != null) {
-            em.merge(district);
-        } else {
-            em.persist(district);
-        }
+        TypedQuery<District> find = em.createQuery("select d from District d", District.class);
+        int id = find.getResultList().size();
+        Member leader = em.find(Member.class, leaderHousehold);
+        District d = new District();
+        d.setId(id);
+        d.setLeader(leader);
+        leader.setDistrict(id);
+        em.persist(d);
+        em.persist(leader);
+        em.getTransaction().commit();
+        return d;
+    }
+
+    @POST
+    @Path("/create/{leader}/{assistant}")
+    @Consumes(MediaType.WILDCARD)
+    public Response createNewDistrict(@PathParam("leader") String leaderHousehold, @PathParam("assistant") String assistantHousehold) {
+        EntityManager em = emf.createEntityManager();
+        em.getTransaction().begin();
+        TypedQuery<District> find = em.createQuery("select d from District d", District.class);
+        int id = find.getMaxResults();
+        Member leader = em.find(Member.class, leaderHousehold);
+        Member assistant = em.find(Member.class, assistantHousehold);
+        District d = new District();
+        d.setId(id);
+        d.setLeader(leader);
+        d.setAssistant(assistant);
+        leader.setDistrict(id);
+        assistant.setDistrict(id);
+        em.persist(d);
+        em.persist(leader);
+        em.persist(assistant);
         em.getTransaction().commit();
         return Response.ok().build();
     }
@@ -143,6 +166,18 @@ public class DistrictList {
             storeDistrict(d);
         }
 
+        return Response.ok().build();
+    }
+
+    @POST
+    public Response storeDistrict(District district) {
+        EntityManager em = emf.createEntityManager();
+        District find = em.find(District.class, district.getId());
+        if (find != null) {
+            em.merge(district);
+        } else {
+            em.persist(district);
+        }
         return Response.ok().build();
     }
 

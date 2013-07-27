@@ -19,13 +19,14 @@
 <persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
   <persistence-unit name="disaster" transaction-type="RESOURCE_LOCAL">
     <provider>org.apache.openjpa.persistence.PersistenceProviderImpl</provider>
-    <non-jta-data-source/>
+    <jta-data-source>java:/jboss/datasources/disaster</jta-data-source>
     <class>org.lds.disasterlocator.jpa.Member</class>
     <class>org.lds.disasterlocator.jpa.District</class>
     <exclude-unlisted-classes>false</exclude-unlisted-classes>
     <properties>
       <property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema(ForeignKeys=true)"/>
       <property name="openjpa.DetachState" value="fetch-groups(DetachedStateField=true)"/>
+      <property name="jboss.as.jpa.providerModule" value="org.apache.openjpa" />
     </properties>
   </persistence-unit>
 </persistence>

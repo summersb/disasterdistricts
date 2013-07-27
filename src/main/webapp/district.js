@@ -40,15 +40,11 @@ function show(district) {
 }
 
 function createDistrict() {
-    var id = $('#createdistid').val();
-    var district = '{"id":' + id + ',"leader":' + $('#distLeader').val() 
-            + ',"assistant":' + $('#distAssistLeader').val() + '}';
-//    var district = '{"id":' + id + '"}';
+    var leader = $('#distLeader').val();
+    var assistant = $("#distAssistLeader");
     $.ajax({
         type: "POST",
-        url: "rest/district",
-        data: JSON.stringify(district),
-        contentType: 'application/json;charset=UTF-8',
+        url: "rest/district/create/" + leader + "/" + assistant,
         success: function(data, textStatus, xhr) {
             $('#body').empty();
             initialize();
@@ -59,7 +55,7 @@ function createDistrict() {
 function updateLeaders(address) {
     address.sort(sortAddresses);
     for (var i = 0; i < address.length; i++) {
-        body += '<option value=\'' + JSON.stringify(address[i])
+        body += '<option value=\'' + address[i].household
                 + '\'>' + address[i].household
                 + '</option>';
     }
@@ -71,15 +67,3 @@ function updateLeaders(address) {
 function sortAddresses(addressA, addressB) {
     return addressA.household.localeCompare(addressB.household);
 }
-
-//function createDistrict() {
-//    $.ajax({
-//        type: "POST",
-//        url: "rest/district",
-//        data: JSON.stringify(dist),
-//        contentType: 'application/json;charset=UTF-8',
-//        success: function(data, textStatus, xhr) {
-//            alert("saved address");
-//        }
-//    });
-//}
