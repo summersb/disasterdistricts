@@ -22,11 +22,12 @@
     <jta-data-source>java:/jboss/datasources/disaster</jta-data-source>
     <class>org.lds.disasterlocator.jpa.Member</class>
     <class>org.lds.disasterlocator.jpa.District</class>
-    <exclude-unlisted-classes>false</exclude-unlisted-classes>
+    <class>org.lds.disasterlocator.jpa.AddressMap</class>
+    <exclude-unlisted-classes>true</exclude-unlisted-classes>
     <properties>
       <property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema(ForeignKeys=true)"/>
       <property name="openjpa.DetachState" value="fetch-groups(DetachedStateField=true)"/>
-      <property name="jboss.as.jpa.providerModule" value="org.apache.openjpa" />
+      <property name="jboss.as.jpa.providerModule" value="org.apache.openjpa"/>
     </properties>
   </persistence-unit>
 </persistence>

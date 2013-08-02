@@ -31,7 +31,8 @@ public class ApplicationConfig extends Application {
         Set<Class<?>> resources = new java.util.HashSet<>();
         // following code can be used to customize Jersey 2.0 JSON provider:
         try {
-            Class jsonProvider = Class.forName("org.glassfish.jersey.jackson.JacksonFeature");
+            Class jsonProvider = Class.forName("org.codehaus.jackson.jaxrs.JacksonJsonProvider");
+//            Class jsonProvider = Class.forName("org.glassfish.jersey.jackson.JacksonFeature");
             // Class jsonProvider = Class.forName("org.glassfish.jersey.moxy.json.MoxyJsonFeature");
             // Class jsonProvider = Class.forName("org.glassfish.jersey.jettison.JettisonFeature");
             resources.add(jsonProvider);

@@ -190,6 +190,7 @@ function createNewDistrict(leader){
             address.district = data.id;
             plotHouses(radius);
             showLeader();
+            showAssistant();
         }
     });
 }
