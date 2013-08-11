@@ -26,8 +26,8 @@ import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.lds.disasterlocator.jpa.Member;
-import org.lds.disasterlocator.rest.EntityManagerFactoryHelper;
+import org.lds.disasterlocator.server.rest.jpa.MemberJpa;
+import org.lds.disasterlocator.server.rest.EntityManagerFactoryHelper;
 
 /**
  *
@@ -50,8 +50,8 @@ public class LoadMemberList {
 
         ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY);
         mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        Member[] mem = mapper.readValue(is, Member[].class);
-        for (Member member : mem) {
+        MemberJpa[] mem = mapper.readValue(is, MemberJpa[].class);
+        for (MemberJpa member : mem) {
             em.persist(member);
         }
         em.getTransaction().commit();

@@ -29,8 +29,8 @@ import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.lds.disasterlocator.rest.json.model.GeocodeResponse;
-import org.lds.disasterlocator.rest.json.model.Result;
+import org.lds.disasterlocator.server.rest.json.model.GeocodeResponse;
+import org.lds.disasterlocator.server.rest.json.model.Result;
 
 /**
  *

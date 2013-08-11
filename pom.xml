@@ -12,6 +12,9 @@
     <properties>
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <gwt.version>2.5.1</gwt.version>
+        <gwt.style>OBF</gwt.style>
+        <webappDirectory>${project.build.directory}/${project.build.finalName}</webappDirectory>
     </properties>
 
     <licenses>
@@ -19,16 +22,41 @@
             <name>The Apache Software License, Version 2.0</name>
             <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
             <distribution>repo</distribution>
-            <comments>A business-friendly OSS license</comments>        
+            <comments>A business-friendly OSS license</comments>
         </license>
     </licenses>
     <dependencies>
+        <!-- GWT -->
+        <dependency>
+            <groupId>com.google.gwt</groupId>
+            <artifactId>gwt-user</artifactId>
+            <version>${gwt.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.branflake2267</groupId>
+            <artifactId>gwt-maps-api</artifactId>
+            <version>3.10.0-alpha-6</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>gwt-dev</artifactId>
+                    <groupId>com.google.gwt</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.branflake2267</groupId>
+            <artifactId>gwt-maps-utility-markerclustererplus</artifactId>
+            <version>3.10.0-alpha-6</version>
+        </dependency>
+        <!-- Database -->
         <dependency>
             <groupId>org.apache.openjpa</groupId>
             <artifactId>openjpa</artifactId>
             <version>2.2.2</version>
         </dependency>
-        <!-- Database -->
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
@@ -82,6 +110,14 @@
     </repositories>
     <build>
         <finalName>disaster</finalName>
+        <outputDirectory>${webappDirectory}/WEB-INF/classes</outputDirectory>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -93,6 +129,19 @@
                     <compilerArguments>
                         <endorseddirs>${endorsed.dir}</endorseddirs>
                     </compilerArguments>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.15</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*GwtTest.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
@@ -182,6 +231,46 @@
                     <execution>
                         <goals>
                             <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- GWT -->
+            <!-- 'mvn gwt:run' - runs development mode -->
+            <!-- 'mvn gwt:debug' - runs debug mode -->
+            <!-- 'mvn gwt:compile' - compiles gwt -->
+            <!-- 'mvn gwt:test' or 'mvn integration-test' - runs the gwt tests (*GwtTest.java),
+            (run a suite its faster) -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>gwt-maven-plugin</artifactId>
+                <version>${gwt.version}</version>
+                <configuration>
+                    <strict>true</strict>
+
+                    <testTimeOut>180</testTimeOut>
+                    <mode>htmlunit</mode>
+                    <!-- <includes>**/*GwtTestSuite.java</includes> -->
+                    <!-- <excludes>**/*GwtTest.java</excludes> -->
+                    <includes>**/*GwtTest.java</includes>
+
+                    <extraJvmArgs>-Xss1024K -Xmx1024M -XX:MaxPermSize=256M</extraJvmArgs>
+                    <logLevel>INFO</logLevel>
+                    <style>${gwt.style}</style>
+
+                    <copyWebapp>true</copyWebapp>
+                    <hostedWebapp>${webappDirectory}</hostedWebapp>
+                    <debugSuspend>false</debugSuspend>
+                    <noServer>true</noServer>
+                    <runTarget>Project.html</runTarget>
+                    <module>org.lds.disasterlocator.Disaster</module>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>test</goal>
                         </goals>
                     </execution>
                 </executions>

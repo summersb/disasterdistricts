@@ -28,9 +28,9 @@ import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.lds.disasterlocator.jpa.AddressMap;
-import org.lds.disasterlocator.rest.EntityManagerFactoryHelper;
-import org.lds.disasterlocator.rest.json.DistanceMatrixResponse;
+import org.lds.disasterlocator.server.rest.jpa.AddressMapJpa;
+import org.lds.disasterlocator.server.rest.EntityManagerFactoryHelper;
+import org.lds.disasterlocator.server.rest.json.DistanceMatrixResponse;
 
 /**
  *
@@ -43,7 +43,7 @@ public class GoogleGeoSimulator {
     public static void storeUrl(String url, String data) throws IOException {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
-        AddressMap map = new AddressMap();
+        AddressMapJpa map = new AddressMapJpa();
         map.setKey(url);
         map.setValue(data);
         map.setId(getHash(url));
@@ -64,7 +64,7 @@ public class GoogleGeoSimulator {
 
     public static String getUrl(String url) throws IOException {
         EntityManager em = emf.createEntityManager();
-        AddressMap address = em.find(AddressMap.class, getHash(url));
+        AddressMapJpa address = em.find(AddressMapJpa.class, getHash(url));
         if (address == null) {
             em.close();
             return null;
