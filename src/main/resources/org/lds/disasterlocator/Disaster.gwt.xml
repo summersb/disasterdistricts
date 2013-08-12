@@ -28,6 +28,9 @@
     <!-- Other module inherits                                      -->
     <inherits name='com.google.gwt.maps.Maps' />
     <inherits name="com.google.web.bindery.autobean.AutoBean"/>
+    <inherits name="com.google.gwt.activity.Activity"/>
+    <inherits name="com.google.gwt.place.Place"/>
+
     <!-- Specify the app entry point class.                         -->
     <entry-point class='org.lds.disasterlocator.client.ProjectEntryPoint'/>
 

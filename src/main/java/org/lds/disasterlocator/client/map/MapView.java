@@ -13,22 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.lds.disasterlocator.client;
+package org.lds.disasterlocator.client.map;
 
-import com.google.gwt.event.shared.EventBus;
-import com.google.gwt.place.shared.PlaceController;
+import com.google.gwt.place.shared.Place;
+import com.google.gwt.user.client.ui.IsWidget;
 import com.google.web.bindery.autobean.shared.AutoBeanFactory;
-import org.lds.disasterlocator.client.load.LoadView;
-import org.lds.disasterlocator.client.map.MapView;
+import java.util.List;
+import org.lds.disasterlocator.shared.Member;
 
 /**
  *
  * @author Bert W Summers
  */
-public interface ClientFactory {
-    EventBus getEventBus();
-    AutoBeanFactory getAutoBeanFactory();
-    PlaceController getPlaceController();
-    MapView getMapView();
-    LoadView getLoadView();
+public interface MapView extends IsWidget {
+
+    void setActivity(Activity activity);
+    void plotHouses(List<Member> members);
+    void renderMap();
+
+    interface Activity {
+
+        void goTo(Place place);
+        AutoBeanFactory getAutoBeanFactory();
+    }
 }

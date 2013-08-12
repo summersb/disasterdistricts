@@ -23,8 +23,14 @@ Uncomment this for XHTML entities
              xmlns:g="urn:import:com.google.gwt.user.client.ui">
     <ui:style>
         .mapPanel {width: 100%; height: 100%;}
+        .topMenu {width: 100%; heigth: 50px;}
     </ui:style>
-    <g:HTMLPanel ui:field="map" styleName="{style.mapPanel}">
-        <g:Label>Loadin map api</g:Label>
+    <g:HTMLPanel>
+        <g:HTMLPanel ui:field="topMenu" styleName="{style.mapPanel}">
+            <g:Button ui:field="load">Load Data</g:Button>
+        </g:HTMLPanel>
+        <g:HTMLPanel ui:field="map" styleName="{style.mapPanel}">
+            <g:Label>Loadin map api</g:Label>
+        </g:HTMLPanel>
     </g:HTMLPanel>
 </ui:UiBinder>
