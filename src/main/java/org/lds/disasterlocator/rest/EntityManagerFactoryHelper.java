@@ -27,11 +27,6 @@ import javax.persistence.Persistence;
 public class EntityManagerFactoryHelper {
 
     public static EntityManagerFactory createEntityManagerFactory() {
-        Map<String, String> props = new HashMap<String, String>();
-        props.put("openjpa.ConnectionURL", "jdbc:mysql://localhost:3306/disaster");
-        props.put("openjpa.ConnectionDriverName", "com.mysql.jdbc.Driver");
-        props.put("openjpa.ConnectionUserName", "disaster");
-        props.put("openjpa.ConnectionPassword", "password");
-        return Persistence.createEntityManagerFactory("disaster", props);
+        return Persistence.createEntityManagerFactory("disaster");
     }
 }
