@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.lds.disasterlocator.server.rest;
+package org.lds.disasterlocator.shared;
 
-import java.util.HashMap;
-import java.util.Map;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import java.util.List;
 
 /**
  *
- * @author Bert W Summers
+ * @author Bert Summers
  */
-public class EntityManagerFactoryHelper {
-
-    public static EntityManagerFactory createEntityManagerFactory() {
-        return Persistence.createEntityManagerFactory("disaster");
-    }
+public interface Row {
+    List<String> getCells();
+    void setCells(List<String> cells);
 }

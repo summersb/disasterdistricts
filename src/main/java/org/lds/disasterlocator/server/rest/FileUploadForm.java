@@ -15,18 +15,26 @@
  */
 package org.lds.disasterlocator.server.rest;
 
-import java.util.HashMap;
-import java.util.Map;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import javax.ws.rs.FormParam;
+import org.jboss.resteasy.annotations.providers.multipart.PartType;
 
 /**
  *
- * @author Bert W Summers
+ * @author Bert Summers
  */
-public class EntityManagerFactoryHelper {
+public class FileUploadForm {
 
-    public static EntityManagerFactory createEntityManagerFactory() {
-        return Persistence.createEntityManagerFactory("disaster");
+    public FileUploadForm() {
+    }
+    private byte[] data;
+
+    public byte[] getData() {
+        return data;
+    }
+
+    @FormParam("uploadedFile")
+    @PartType("application/octet-stream")
+    public void setData(byte[] data) {
+        this.data = data;
     }
 }

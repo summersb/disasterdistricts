@@ -26,12 +26,35 @@
         </license>
     </licenses>
     <dependencies>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jaxrs</artifactId>
+            <version>3.0.2.Final</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20090211</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-multipart-provider</artifactId>
+            <version>3.0.2.Final</version>
+            <scope>provided</scope>
+        </dependency>
         <!-- GWT -->
         <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-user</artifactId>
             <version>${gwt.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.gwt</groupId>
+            <artifactId>gwt-servlet</artifactId>
+            <version>${gwt.version}</version>
+            <!--<scope>provided</scope>-->
         </dependency>
 
         <dependency>
@@ -262,6 +285,7 @@
                     <copyWebapp>true</copyWebapp>
                     <hostedWebapp>${webappDirectory}</hostedWebapp>
                     <debugSuspend>false</debugSuspend>
+                    <debugPort>8007</debugPort>
                     <noServer>true</noServer>
                     <runTarget>Project.html</runTarget>
                     <module>org.lds.disasterlocator.Disaster</module>
@@ -278,7 +302,7 @@
             <plugin>
                 <groupId>org.jboss.as.plugins</groupId>
                 <artifactId>jboss-as-maven-plugin</artifactId>
-                <version>7.1.1.Final</version>
+                <version>7.4.Final</version>
                 <configuration>
                     <!--<hostname>d2</hostname>-->
                 </configuration>

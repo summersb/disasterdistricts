@@ -16,4 +16,4 @@
     limitations under the License.
 
 -->
-<Context antiJARLocking="true" path="/disasterlocator"/>
+<Context antiJARLocking="true" path="/disaster"/>

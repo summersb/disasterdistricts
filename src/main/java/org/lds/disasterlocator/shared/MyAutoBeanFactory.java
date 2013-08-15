@@ -27,4 +27,6 @@ public interface MyAutoBeanFactory extends AutoBeanFactory{
     AutoBean<Member> member();
     AutoBean<District> district();
     AutoBean<MemberList> memberList();
+    AutoBean<File> file();
+    AutoBean<Row> row();
 }

@@ -26,5 +26,13 @@ Uncomment this for XHTML entities
     </ui:style>
     <g:HTMLPanel ui:field="panel" styleName="{style.panel}">
         <g:Button ui:field="map">Go to map</g:Button>
+        <g:FormPanel ui:field="form" action="rest/upload" encoding="multipart/form-data" method="POST">
+            <g:FlowPanel>
+                <g:Label>Select CSV file to upload</g:Label>
+                <g:FileUpload ui:field="fileUpload" name="uploadedFile"></g:FileUpload>
+                <g:Button ui:field="submit">Upload</g:Button>
+            </g:FlowPanel>
+        </g:FormPanel>
+        <g:HTMLPanel ui:field="table"></g:HTMLPanel>
     </g:HTMLPanel>
 </ui:UiBinder>

@@ -17,5 +17,5 @@
 
 -->
 <jboss-web>
-  <context-root>/disasterlocator</context-root>
+  <context-root>/disaster</context-root>
 </jboss-web>

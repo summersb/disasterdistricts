@@ -41,6 +41,7 @@ public class ApplicationConfig extends Application {
     private void addRestResourceClasses(Set<Class<?>> resources) {
         resources.add(org.lds.disasterlocator.server.rest.DistrictResource.class);
         resources.add(org.lds.disasterlocator.server.rest.MemberResource.class);
+        resources.add(org.lds.disasterlocator.server.rest.UploadResource.class);
     }
     
 }
