@@ -79,7 +79,7 @@ public class MemberJpa implements Serializable, Member {
      * @param houseHold the houseHold to set
      */
     @Override
-    public void setHouseHold(String houseHold) {
+    public void setHousehold(String houseHold) {
         this.setHousehold(houseHold);
     }
 
@@ -193,14 +193,6 @@ public class MemberJpa implements Serializable, Member {
     @Override
     public void setPhone(String phone) {
         this.phone = phone;
-    }
-
-    /**
-     * @param household the household to set
-     */
-    @Override
-    public void setHousehold(String household) {
-        this.household = household;
     }
 
     /**

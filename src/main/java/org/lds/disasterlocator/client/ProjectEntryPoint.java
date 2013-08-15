@@ -65,7 +65,7 @@ public class ProjectEntryPoint implements EntryPoint {
 //        loadLibraries.add(LoadLibrary.PANORAMIO);
 //        loadLibraries.add(LoadLibrary.PLACES);
 //        loadLibraries.add(LoadLibrary.WEATHER);
-        loadLibraries.add(LoadLibrary.VISUALIZATION);
+//        loadLibraries.add(LoadLibrary.VISUALIZATION);
 
         Runnable onLoad = new Runnable() {
             @Override

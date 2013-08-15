@@ -33,6 +33,7 @@ Uncomment this for XHTML entities
                 <g:Button ui:field="submit">Upload</g:Button>
             </g:FlowPanel>
         </g:FormPanel>
+        <g:Button ui:field="process">Process File</g:Button>
         <g:HTMLPanel ui:field="table"></g:HTMLPanel>
     </g:HTMLPanel>
 </ui:UiBinder>

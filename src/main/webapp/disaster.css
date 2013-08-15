@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* 
+/*
     Document   : disaster
     Created on : Aug 10, 2013, 7:10:32 PM
     Author     : Bert W Summers
@@ -21,7 +21,11 @@
         Purpose of the stylesheet follows.
 */
 
-root { 
+root {
     display: block;
+}
+
+.grey{
+    background-color: grey;
 }
 

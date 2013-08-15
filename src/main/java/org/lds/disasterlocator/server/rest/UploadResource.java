@@ -74,7 +74,6 @@ public class UploadResource {
             }
             file.setRows(rowList);
             String json = AutoBeanCodex.encode(fileAB).getPayload();
-            logger.info(json);
             return Response.ok().entity(json).build();
         } catch (IOException ex) {
             logger.log(Level.SEVERE, "Unable to parse file", ex);

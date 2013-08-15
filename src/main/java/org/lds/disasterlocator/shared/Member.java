@@ -87,11 +87,6 @@ public interface Member {
     void setEmail(String email);
 
     /**
-     * @param houseHold the houseHold to set
-     */
-    void setHouseHold(String houseHold);
-
-    /**
      * @param household the household to set
      */
     void setHousehold(String household);
