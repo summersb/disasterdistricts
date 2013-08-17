@@ -27,7 +27,6 @@ import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.maps.client.base.LatLng;
 import com.google.gwt.maps.client.services.Geocoder;
-import com.google.gwt.maps.client.services.GeocoderAddressComponent;
 import com.google.gwt.maps.client.services.GeocoderGeometry;
 import com.google.gwt.maps.client.services.GeocoderRequest;
 import com.google.gwt.maps.client.services.GeocoderRequestHandler;
@@ -45,6 +44,7 @@ import com.google.gwt.user.client.ui.FormPanel;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.web.bindery.autobean.shared.AutoBean;
 import com.google.web.bindery.autobean.shared.AutoBeanCodex;
@@ -167,8 +167,16 @@ public class LoadViewImpl extends Composite implements LoadView {
             for (int row = 1; row <= tableHeight; row++) {
                 AutoBean<Member> memberAB = factory.create(Member.class);
                 final Member member = memberAB.as();
-                member.setHousehold(grid.getText(row, household));
-                member.setAddress(grid.getText(row, address));
+                TextBox tb = (TextBox) grid.getWidget(row, household);
+                if(tb == null){
+                    // must have been a blank line in the source file
+                    grid.removeRow(row);
+                    row--;
+                    continue;
+                }
+                member.setHousehold(tb.getValue());
+                tb = (TextBox) grid.getWidget(row, address);
+                member.setAddress(tb.getValue());
                 queue.add(member);
             }
             // process queue, on query over limit create a timer to delay processing
@@ -196,13 +204,15 @@ public class LoadViewImpl extends Composite implements LoadView {
         tableWidth = file.getRows().get(0).getCells().size();
 
         List<Row> rows = file.getRows();
-        grid = new Grid(tableHeight + 1, tableWidth);
+        grid = new Grid(tableHeight+1, tableWidth);
         for (int i = 0; i < rows.size(); i++) {
             Row row = rows.get(i);
             List<String> cells = row.getCells();
             for (int column = 0; column < cells.size(); column++) {
                 String cell = cells.get(column);
-                grid.setText(i + 1, column, cell);
+                TextBox textBox = new TextBox();
+                textBox.setText(cell);
+                grid.setWidget(i + 1, column, textBox);
             }
         }
         listBoxList.clear();
