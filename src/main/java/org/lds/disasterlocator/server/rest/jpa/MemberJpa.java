@@ -17,6 +17,7 @@ package org.lds.disasterlocator.server.rest.jpa;
 
 import org.lds.disasterlocator.shared.Member;
 import java.io.Serializable;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -35,6 +36,7 @@ public class MemberJpa implements Serializable, Member {
         household = m.getHousehold();
         address = m.getAddress();
         city = m.getCity();
+        state = m.getState();
         zip = m.getZip();
         email = m.getEmail();
         lat = m.getLat();
@@ -52,6 +54,8 @@ public class MemberJpa implements Serializable, Member {
     private String household;
     private String address;
     private String city;
+    @Column(name="ST")
+    private String state;
     private String zip;
     private String email;
     private String lat;
@@ -223,5 +227,19 @@ public class MemberJpa implements Serializable, Member {
     @Override
     public void setDistrict(int district) {
         this.district = district;
+    }
+
+    /**
+     * @return the state
+     */
+    public String getState() {
+        return state;
+    }
+
+    /**
+     * @param state the state to set
+     */
+    public void setState(String state) {
+        this.state = state;
     }
 }

@@ -30,6 +30,7 @@ public interface Member {
      * @return the city
      */
     String getCity();
+    String getState();
 
     /**
      * @return the district
@@ -75,6 +76,7 @@ public interface Member {
      * @param city the city to set
      */
     void setCity(String city);
+    void setState(String state);
 
     /**
      * @param district the district to set

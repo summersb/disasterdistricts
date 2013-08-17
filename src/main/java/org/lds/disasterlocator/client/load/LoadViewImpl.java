@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.lds.disasterlocator.client.MyResources;
 import org.lds.disasterlocator.client.map.MapPlace;
 import org.lds.disasterlocator.shared.File;
 import org.lds.disasterlocator.shared.Member;
@@ -83,6 +84,9 @@ public class LoadViewImpl extends Composite implements LoadView {
     HTMLPanel table;
     @UiField
     Button process;
+    @UiField HTMLPanel legend;
+    @UiField MyResources res;
+
     private Activity activity;
     private List<ListBox> listBoxList = new ArrayList<ListBox>();
     private int tableHeight;
@@ -91,6 +95,7 @@ public class LoadViewImpl extends Composite implements LoadView {
 
     public LoadViewImpl() {
         initWidget(uiBinder.createAndBindUi(this));
+        res.style().ensureInjected();
     }
 
     @Override
@@ -106,12 +111,23 @@ public class LoadViewImpl extends Composite implements LoadView {
         lb.addItem("Address");
         lb.addItem("City");
         lb.addItem("State");
-        lb.addItem("zip");
-        lb.addItem("email");
-        lb.addItem("phone");
+        lb.addItem("Zip Code");
+        lb.addItem("E-Mail");
+        lb.addItem("Phone");
         lb.addChangeHandler(new ListBoxChangeHandler(this));
         listBoxList.add(lb);
         return lb;
+    }
+
+    private String getTextBoxValue(int row, int household) {
+        if(household == -1){
+            return "";
+        }
+        TextBox tb = (TextBox) grid.getWidget(row, household);
+        if(tb == null){
+            return "";
+        }
+        return tb.getValue();
     }
 
     interface MapUiBinder extends UiBinder<Widget, LoadViewImpl> {
@@ -128,8 +144,10 @@ public class LoadViewImpl extends Composite implements LoadView {
         logger.info("form submit complete");
         String data = event.getResults();
         // now send this to render table
-        createTable(data);
         form.setVisible(false);
+        createTable(data);
+        process.setVisible(true);
+        legend.setVisible(true);
     }
 
     @UiHandler("submit")
@@ -146,16 +164,24 @@ public class LoadViewImpl extends Composite implements LoadView {
      */
     @UiHandler("process")
     public void processFile(ClickEvent event) {
-        int household = -1, address = -1;
+        int household = -1, address = -1, city = -1, state = -1, zip = -1, phone = -1, email=-1;
         for (int i = 0; i < listBoxList.size(); i++) {
             ListBox listBox = listBoxList.get(i);
             int index = listBox.getSelectedIndex();
             if (index == 1) {
-                // household ok
                 household = i;
             } else if (index == 2) {
-                // address ok
                 address = i;
+            } else if (index == 3) {
+                city = i;
+            } else if (index == 4) {
+                state = i;
+            } else if (index == 5) {
+                zip = i;
+            } else if (index == 7) {
+                phone = i;
+            } else if (index == 6) {
+                email = i;
             }
         }
         if (household > -1 && address > -1) {
@@ -174,9 +200,14 @@ public class LoadViewImpl extends Composite implements LoadView {
                     row--;
                     continue;
                 }
-                member.setHousehold(tb.getValue());
-                tb = (TextBox) grid.getWidget(row, address);
-                member.setAddress(tb.getValue());
+                member.setHousehold(getTextBoxValue(row, household));
+                member.setAddress(getTextBoxValue(row, address));
+                member.setCity(getTextBoxValue(row, city));
+                member.setState(getTextBoxValue(row, state));
+                member.setZip(getTextBoxValue(row, zip));
+                member.setEmail(getTextBoxValue(row, email));
+                member.setPhone(getTextBoxValue(row, phone));
+
                 queue.add(member);
             }
             // process queue, on query over limit create a timer to delay processing
@@ -210,6 +241,7 @@ public class LoadViewImpl extends Composite implements LoadView {
             List<String> cells = row.getCells();
             for (int column = 0; column < cells.size(); column++) {
                 String cell = cells.get(column);
+                cell = cell.replace("&amp;", "&");
                 TextBox textBox = new TextBox();
                 textBox.setText(cell);
                 grid.setWidget(i + 1, column, textBox);
