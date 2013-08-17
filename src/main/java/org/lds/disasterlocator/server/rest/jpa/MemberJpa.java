@@ -29,6 +29,20 @@ import javax.persistence.Table;
 @Table(name="Member")
 public class MemberJpa implements Serializable, Member {
 
+    public MemberJpa(){}
+
+    public MemberJpa(Member m){
+        household = m.getHousehold();
+        address = m.getAddress();
+        city = m.getCity();
+        zip = m.getZip();
+        email = m.getEmail();
+        lat = m.getLat();
+        lng = m.getLng();
+        phone = m.getPhone();
+        district = m.getDistrict();
+    }
+
     @Override
     public String toString() {
         return "Member{" + "household=" + getHousehold() + ", address=" + getAddress() + ", city=" + getCity() + ", zip=" + getZip() + ", email=" + getEmail() + ", lat=" + getLat() + ", lng=" + getLng() + ", phone=" + getPhone() + ", district=" + getDistrict() + '}';

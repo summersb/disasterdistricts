@@ -13,26 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
-    Document   : disaster
-    Created on : Aug 10, 2013, 7:10:32 PM
-    Author     : Bert W Summers
-    Description:
-        Purpose of the stylesheet follows.
-*/
+package org.lds.disasterlocator.shared;
 
-root {
-    display: block;
-}
-
-.duplicate{
-    background-color: grey;
-}
-
-.badaddress{
-    background-color: red;
-}
-
-.failed{
-    background-color: green;
+/**
+ *
+ * @author Bert Summers
+ */
+public class MyConstants {
+    public static final String REST_URL = "rest/";
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String APPLICATION_JSON = "application/json;charset=UTF-8";
+    public static final int OK = 200;
 }

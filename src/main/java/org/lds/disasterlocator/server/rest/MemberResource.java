@@ -15,7 +15,9 @@
  */
 package org.lds.disasterlocator.server.rest;
 
-import java.util.ArrayList;
+import com.google.web.bindery.autobean.shared.AutoBean;
+import com.google.web.bindery.autobean.shared.AutoBeanCodex;
+import com.google.web.bindery.autobean.vm.AutoBeanFactorySource;
 import org.lds.disasterlocator.server.rest.jpa.MemberJpa;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +27,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -36,6 +39,7 @@ import org.lds.disasterlocator.Csv2Json;
 import org.lds.disasterlocator.server.rest.jpa.DistrictJpa;
 import org.lds.disasterlocator.server.rest.json.model.GeocodeResponse;
 import org.lds.disasterlocator.shared.Member;
+import org.lds.disasterlocator.shared.MyAutoBeanFactory;
 
 /**
  *
@@ -124,6 +128,26 @@ public class MemberResource {
         }
         em.getTransaction().commit();
 
+        return Response.ok().build();
+    }
+
+    @POST
+    public Response createMember(String json) {
+        MyAutoBeanFactory factory = AutoBeanFactorySource.create(MyAutoBeanFactory.class);
+        AutoBean<Member> memberAB = AutoBeanCodex.decode(factory, Member.class, json);
+        Member memberBean = memberAB.as();
+        MemberJpa member = new MemberJpa(memberBean);
+        EntityManager em = emf.createEntityManager();
+        // check if member exists and throw 409 Conflict if so
+        Member find = em.find(MemberJpa.class, member.getHousehold());
+        if(find != null){
+            em.close();
+            return Response.status(Status.CONFLICT).build();
+        }
+        em.getTransaction().begin();
+        em.persist(member);
+        em.getTransaction().commit();
+        em.close();
         return Response.ok().build();
     }
 }
