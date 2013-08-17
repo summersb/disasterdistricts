@@ -36,6 +36,7 @@ import com.google.gwt.maps.client.services.GeocoderStatus;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
+import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
@@ -91,6 +92,7 @@ public class LoadViewImpl extends Composite implements LoadView {
     Button process;
     @UiField HTMLPanel legend;
     @UiField MyResources res;
+    @UiField Grid legendGrid;
 
     private Activity activity;
     private List<ListBox> listBoxList = new ArrayList<ListBox>();
@@ -158,6 +160,7 @@ public class LoadViewImpl extends Composite implements LoadView {
     @UiHandler("submit")
     public void submitCLicked(ClickEvent event) {
         logger.info("submit clicked");
+        submit.setEnabled(false);
         form.submit();
     }
         int household = -1, address = -1, city = -1, state = -1, zip = -1, phone = -1, email=-1;
@@ -170,6 +173,8 @@ public class LoadViewImpl extends Composite implements LoadView {
      */
     @UiHandler("process")
     public void processFile(ClickEvent event) {
+        process.setEnabled(false);
+        final Button localProcessReference = process;
         for (int i = 0; i < listBoxList.size(); i++) {
             ListBox listBox = listBoxList.get(i);
             int index = listBox.getSelectedIndex();
@@ -221,8 +226,12 @@ public class LoadViewImpl extends Composite implements LoadView {
                 @Override
                 public void complete() {
                     // now we can remove grey rows from table
-                    logger.info("Clean up time");
+                    logger.info("Finished list");
                     // ask user to fix errors
+                    if(grid.getRowCount() > 1){
+                        Window.alert("Correct errors and process the corrected addresses again.");
+                    }
+                    localProcessReference.setEnabled(true);
                     tableHeight = grid.getRowCount() - 1;
                 }
             }, this);
@@ -419,6 +428,7 @@ public class LoadViewImpl extends Composite implements LoadView {
         }
 
         private void end() {
+            legendGrid.setText(1,1, "Progress: " + queue.size() + " records remaining");
             queue.remove();
             processMember();
         }

@@ -35,13 +35,16 @@ Uncomment this for XHTML entities
             </g:FlowPanel>
         </g:FormPanel>
         <g:Button ui:field="process" visible="false">Process File</g:Button>
+
         <g:HTMLPanel ui:field="legend" visible="false">
-            <g:Grid>
+            <g:Grid ui:field="legendGrid">
                 <g:row>
                     <g:cell>Legend</g:cell>
+                    <g:cell>Progress:</g:cell>
                 </g:row>
                 <g:row styleName="{res.style.duplicate}">
                     <g:cell>Duplicate Member found</g:cell>
+                    <g:cell>Remaining Records</g:cell>
                 </g:row>
                 <g:row styleName="{res.style.multipleAddress}">
                     <g:cell>Multiple Address Found</g:cell>
