@@ -41,10 +41,13 @@ Uncomment this for XHTML entities
                     <g:cell>Legend</g:cell>
                 </g:row>
                 <g:row styleName="{res.style.duplicate}">
-                    <g:cell>Duplicate</g:cell>
+                    <g:cell>Duplicate Member found</g:cell>
+                </g:row>
+                <g:row styleName="{res.style.multipleAddress}">
+                    <g:cell>Multiple Address Found</g:cell>
                 </g:row>
                 <g:row styleName="{res.style.badAddress}">
-                    <g:cell>Invalid address</g:cell>
+                    <g:cell>Address could not be resolved</g:cell>
                 </g:row>
                 <g:row styleName="{res.style.failed}">
                     <g:cell>Failed to process</g:cell>

@@ -20,6 +20,7 @@ import com.google.gwt.core.client.JsArray;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
@@ -39,12 +40,16 @@ import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.DecoratedPopupPanel;
 import com.google.gwt.user.client.ui.FileUpload;
 import com.google.gwt.user.client.ui.FormPanel;
 import com.google.gwt.user.client.ui.Grid;
+import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.RadioButton;
 import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.web.bindery.autobean.shared.AutoBean;
 import com.google.web.bindery.autobean.shared.AutoBeanCodex;
@@ -155,6 +160,7 @@ public class LoadViewImpl extends Composite implements LoadView {
         logger.info("submit clicked");
         form.submit();
     }
+        int household = -1, address = -1, city = -1, state = -1, zip = -1, phone = -1, email=-1;
 
     /**
      * This method assumes that at least household and address have been
@@ -164,7 +170,6 @@ public class LoadViewImpl extends Composite implements LoadView {
      */
     @UiHandler("process")
     public void processFile(ClickEvent event) {
-        int household = -1, address = -1, city = -1, state = -1, zip = -1, phone = -1, email=-1;
         for (int i = 0; i < listBoxList.size(); i++) {
             ListBox listBox = listBoxList.get(i);
             int index = listBox.getSelectedIndex();
@@ -279,7 +284,7 @@ public class LoadViewImpl extends Composite implements LoadView {
         }
     }
 
-    static class MyGeoRequestHandler implements GeocoderRequestHandler, RestCallBack {
+    class MyGeoRequestHandler implements GeocoderRequestHandler, RestCallBack {
 
         private Member member;
         private final Grid grid;
@@ -302,7 +307,62 @@ public class LoadViewImpl extends Composite implements LoadView {
             if (status.toString().equals("OK")) {
                 if (results.length() != 1) {
                     logger.severe("Incorrect results for address " + member.getHousehold() + ":" + member.getAddress());
-                    grid.getRowFormatter().setStyleName(row, "badaddress");
+                    grid.getRowFormatter().setStyleName(row, res.style().multipleAddress());
+                    // when the user clicks on the field show a popup to select one of the address
+                    // still allow user to modify the address
+                    final List<String> addresses = new ArrayList<String>();
+                    for (int i = 0; i < results.length(); i++) {
+                        GeocoderResult geocoderResult = results.get(i);
+                        addresses.add(geocoderResult.getFormatted_Address());
+                    }
+                    final TextBox tb = (TextBox) grid.getWidget(row, LoadViewImpl.this.address);
+                    tb.addClickHandler(new ClickHandler() {
+                        @Override
+                        public void onClick(ClickEvent event) {
+                            // show a popup to select an address
+                            Widget source = (Widget) event.getSource();
+                            int left = source.getAbsoluteLeft() + 10;
+                            int top = source.getAbsoluteTop() + 10;
+                            final DecoratedPopupPanel simplePopup = new DecoratedPopupPanel(true);
+                            simplePopup.ensureDebugId("cwBasicPopup-simplePopup");
+                            simplePopup.setWidth("400px");
+                            VerticalPanel vp = new VerticalPanel();
+                            vp.add(new HTML("Select a valid address"));
+                            final List<RadioButton> rbList = new ArrayList<RadioButton>();
+                            for (String addres : addresses) {
+                                RadioButton rb = new RadioButton("address", addres);
+                                vp.add(rb);
+                                rbList.add(rb);
+                            }
+                            Button button = new Button("OK");
+                            button.addClickHandler(new ClickHandler() {
+
+                                @Override
+                                public void onClick(ClickEvent event) {
+                                    // get selected radio button
+                                    String text = "";
+                                    for (RadioButton radioButton : rbList) {
+                                        if(radioButton.getValue()){
+                                            text = radioButton.getText();
+                                            break;
+                                        }
+                                    }
+                                    tb.setValue(text);
+                                    simplePopup.setVisible(false);
+                                    simplePopup.hide();
+                                }
+                            });
+                            vp.add(button);
+                            simplePopup.setWidget(vp);
+                            simplePopup.setPopupPosition(left, top);
+
+                            // Show the popup
+                            simplePopup.show();
+
+
+                            tb.setValue("updated");
+                        }
+                    });
                     row++;
                     end();
                     // error. to many results need to clarify address
@@ -322,7 +382,7 @@ public class LoadViewImpl extends Composite implements LoadView {
                         rb.sendRequest(json, new MyRequestCallbackHandler(this));
                     } catch (RequestException ex) {
                         logger.log(Level.SEVERE, "Failed to persist member" + member.getHousehold() + ":" + member.getAddress(), ex);
-                        grid.getRowFormatter().setStyleName(row, "failed");
+                        grid.getRowFormatter().setStyleName(row, res.style().failed());
                         row++;
                         end();
                     }
@@ -339,7 +399,7 @@ public class LoadViewImpl extends Composite implements LoadView {
                 t.schedule(10000);
             } else {
                 logger.severe("Failed to process " + status.toString() + " for " + member.getHousehold() + ":" + member.getAddress());
-                grid.getRowFormatter().setStyleName(row, "badaddress");
+                grid.getRowFormatter().setStyleName(row, res.style().badAddress());
                 row++;
                 end();
             }
@@ -373,7 +433,7 @@ public class LoadViewImpl extends Composite implements LoadView {
         @Override
         public void failure() {
             logger.info("Failed to process " + member.getHousehold() + ":" + member.getAddress());
-            grid.getRowFormatter().setStyleName(row, "duplicate");
+            grid.getRowFormatter().setStyleName(row, res.style().duplicate());
             row++;
             end();
         }

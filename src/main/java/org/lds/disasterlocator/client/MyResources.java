@@ -32,5 +32,6 @@ public interface MyResources extends ClientBundle {
     String failed();
     String badAddress();
     String panel();
+    String multipleAddress();
   }
 }

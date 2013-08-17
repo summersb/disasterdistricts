@@ -29,6 +29,10 @@
     background-color: red;
 }
 
+.multipleAddress{
+    background-color: yellow;
+}
+
 .failed{
     background-color: green;
 }
