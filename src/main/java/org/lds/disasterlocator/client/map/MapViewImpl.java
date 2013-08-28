@@ -1,17 +1,17 @@
 /**
  * Copyright (C) 2013
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.lds.disasterlocator.client.map;
 
@@ -39,9 +39,14 @@ import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HTMLPanel;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.PopupPanel;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 import java.util.List;
 import org.lds.disasterlocator.client.load.LoadPlace;
@@ -54,10 +59,12 @@ import org.lds.disasterlocator.shared.Member;
 public class MapViewImpl extends Composite implements MapView {
 
     private static MapUiBinder uiBinder = GWT.create(MapUiBinder.class);
-    @UiField HTMLPanel map;
-    @UiField HTMLPanel topMenu;
-    @UiField Button load;
-
+    @UiField
+    HTMLPanel map;
+    @UiField
+    HTMLPanel topMenu;
+    @UiField
+    Button load;
     private Activity activity;
 
     public MapViewImpl() {
@@ -75,7 +82,6 @@ public class MapViewImpl extends Composite implements MapView {
         map.add(mapWidget);
 
         mapWidget.addResizeHandler(new ResizeMapHandler() {
-
             @Override
             public void onEvent(ResizeMapEvent event) {
                 mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
@@ -124,36 +130,86 @@ public class MapViewImpl extends Composite implements MapView {
 //        createSpiderdfier();
     }
 
-    protected void drawInfoWindow(Marker marker, MouseEvent mouseEvent) {
+    private String memberInfo(Member member) {
+        String rollover;
+        String[] tokens;
+        rollover = member.getHousehold();
+        rollover += "\n";
+        tokens = member.getAddress().split("[,]");
+        rollover += tokens[0];
+        rollover += "\n";
+        rollover += "District: " + member.getDistrict();
+        return rollover;
+    }
+
+    protected void drawInfoWindow(Marker marker, MouseEvent mouseEvent, Member member) {
         if (marker == null || mouseEvent == null) {
             return;
         }
+        VerticalPanel panel = new VerticalPanel();
 
-        HTML html = new HTML("You clicked on: " + mouseEvent.getLatLng().getToString());
+        HTML html = new HTML("<b>" + member.getHousehold() + "</b>");
+        panel.add(html);
+        String[] tokens = member.getAddress().split("[,]");
+        Label lbl = new Label(tokens[0]);
+        panel.add(lbl);
+        CheckBox checkbox  = new CheckBox("District Leader", true);
+        panel.add(checkbox);
+        checkbox  = new CheckBox("Automatic Assignment", true);
+        panel.add(checkbox);
+        lbl = new Label("District: " + member.getDistrict());
+        panel.add(lbl);
+        TextBox tb = new TextBox();
+         panel.add(tb);
 
         InfoWindowOptions options = InfoWindowOptions.newInstance();
-        options.setContent(html);
+        options.setContent(panel);
+
         InfoWindow iw = InfoWindow.newInstance(options);
+
         iw.open(mapWidget, marker);
+    }
+
+    private String rollOver(Member member) {
+        String rollover;
+        String[] tokens;
+        rollover = member.getHousehold();
+        rollover += "\n";
+        tokens = member.getAddress().split("[,]");
+        rollover += tokens[0];
+        rollover += "\n";
+        rollover += "District: " + member.getDistrict();
+        return rollover;
+    }
+
+    private class MarkerHandler implements ClickMapHandler {
+
+        Marker marker;
+        Member member;
+
+        MarkerHandler(Marker marker, Member member) {
+            this.marker = marker;
+            this.member = member;
+        }
+
+        @Override
+        public void onEvent(ClickMapEvent event) {
+            drawInfoWindow(marker, event.getMouseEvent(), member);
+        }
     }
 
     @Override
     public void plotHouses(List<Member> members) {
-        for (Member member : members) {
+        for (final Member member : members) {
             LatLng center = LatLng.newInstance(Double.parseDouble(member.getLat()), Double.parseDouble(member.getLng()));
             MarkerOptions options = MarkerOptions.newInstance();
             options.setPosition(center);
-            options.setTitle(member.getHousehold());
+            options.setTitle(rollOver(member));
 
-            final Marker markerBasic = Marker.newInstance(options);
-            markerBasic.setMap(mapWidget);
+            final Marker marker = Marker.newInstance(options);
+            marker.setMap(mapWidget);
 
-            markerBasic.addClickHandler(new ClickMapHandler() {
-                @Override
-                public void onEvent(ClickMapEvent event) {
-                    drawInfoWindow(markerBasic, event.getMouseEvent());
-                }
-            });
+            marker.addClickHandler(new MarkerHandler(marker, member));
 
         }
     }
