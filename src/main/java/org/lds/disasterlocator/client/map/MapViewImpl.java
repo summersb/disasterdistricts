@@ -59,12 +59,11 @@ import org.lds.disasterlocator.shared.Member;
 public class MapViewImpl extends Composite implements MapView {
 
     private static MapUiBinder uiBinder = GWT.create(MapUiBinder.class);
-    @UiField
-    HTMLPanel map;
-    @UiField
-    HTMLPanel topMenu;
-    @UiField
-    Button load;
+    @UiField HTMLPanel map;
+    @UiField HTMLPanel topMenu;
+    @UiField Button load;
+    @UiField Button compute;
+
     private Activity activity;
 
     public MapViewImpl() {
@@ -217,6 +216,17 @@ public class MapViewImpl extends Composite implements MapView {
     @UiHandler("load")
     public void loadData(ClickEvent event) {
         activity.goTo(new LoadPlace("loaddata"));
+    }
+
+    @UiHandler("compute")
+    public void computeMembers(ClickEvent event){
+        // get district leaders
+        // get members within 1,000 meters
+        // compute road distance for each member
+
+        // assign all district 1 members to district 1
+        // as other districts compute their distance reassign members if they are
+        // closer to another district
     }
 
     private native void createSpiderdfier()/*-{

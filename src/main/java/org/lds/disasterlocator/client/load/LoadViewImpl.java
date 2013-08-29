@@ -36,7 +36,6 @@ import com.google.gwt.maps.client.services.GeocoderStatus;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
@@ -55,6 +54,7 @@ import com.google.gwt.user.client.ui.Widget;
 import com.google.web.bindery.autobean.shared.AutoBean;
 import com.google.web.bindery.autobean.shared.AutoBeanCodex;
 import com.google.web.bindery.autobean.shared.AutoBeanFactory;
+import com.google.web.bindery.event.shared.HandlerRegistration;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -99,6 +99,8 @@ public class LoadViewImpl extends Composite implements LoadView {
     private int tableHeight;
     private int tableWidth;
     private Grid grid;
+    private int household = -1, address = -1, city = -1, state = -1, zip = -1, phone = -1, email=-1;
+    private List<HandlerRegistration> addressHandlers = new ArrayList<HandlerRegistration>();
 
     public LoadViewImpl() {
         initWidget(uiBinder.createAndBindUi(this));
@@ -163,7 +165,6 @@ public class LoadViewImpl extends Composite implements LoadView {
         submit.setEnabled(false);
         form.submit();
     }
-        int household = -1, address = -1, city = -1, state = -1, zip = -1, phone = -1, email=-1;
 
     /**
      * This method assumes that at least household and address have been
@@ -174,6 +175,10 @@ public class LoadViewImpl extends Composite implements LoadView {
     @UiHandler("process")
     public void processFile(ClickEvent event) {
         process.setEnabled(false);
+        // remove any prior handlers
+        for (HandlerRegistration handlerRegistration : addressHandlers) {
+            handlerRegistration.removeHandler();
+        }
         final Button localProcessReference = process;
         for (int i = 0; i < listBoxList.size(); i++) {
             ListBox listBox = listBoxList.get(i);
@@ -301,7 +306,6 @@ public class LoadViewImpl extends Composite implements LoadView {
         private final CallBack callback;
         private int row = 1; // row 0 is listbox row
         private final AutoBeanFactory factory;
-        private String household;
 
         public MyGeoRequestHandler(Queue<Member> queue, Grid grid, CallBack callback, LoadViewImpl page) {
             this.queue = queue;
@@ -325,53 +329,7 @@ public class LoadViewImpl extends Composite implements LoadView {
                         addresses.add(geocoderResult.getFormatted_Address());
                     }
                     final TextBox tb = (TextBox) grid.getWidget(row, LoadViewImpl.this.address);
-                    tb.addClickHandler(new ClickHandler() {
-                        @Override
-                        public void onClick(ClickEvent event) {
-                            // show a popup to select an address
-                            Widget source = (Widget) event.getSource();
-                            int left = source.getAbsoluteLeft() + 10;
-                            int top = source.getAbsoluteTop() + 10;
-                            final DecoratedPopupPanel simplePopup = new DecoratedPopupPanel(true);
-                            simplePopup.ensureDebugId("cwBasicPopup-simplePopup");
-                            simplePopup.setWidth("400px");
-                            VerticalPanel vp = new VerticalPanel();
-                            vp.add(new HTML("Select a valid address"));
-                            final List<RadioButton> rbList = new ArrayList<RadioButton>();
-                            for (String addres : addresses) {
-                                RadioButton rb = new RadioButton("address", addres);
-                                vp.add(rb);
-                                rbList.add(rb);
-                            }
-                            Button button = new Button("OK");
-                            button.addClickHandler(new ClickHandler() {
-
-                                @Override
-                                public void onClick(ClickEvent event) {
-                                    // get selected radio button
-                                    String text = "";
-                                    for (RadioButton radioButton : rbList) {
-                                        if(radioButton.getValue()){
-                                            text = radioButton.getText();
-                                            break;
-                                        }
-                                    }
-                                    tb.setValue(text);
-                                    simplePopup.setVisible(false);
-                                    simplePopup.hide();
-                                }
-                            });
-                            vp.add(button);
-                            simplePopup.setWidget(vp);
-                            simplePopup.setPopupPosition(left, top);
-
-                            // Show the popup
-                            simplePopup.show();
-
-
-                            tb.setValue("updated");
-                        }
-                    });
+                    addressHandlers.add(tb.addClickHandler(new MultiAddressHandler(addresses, tb)));
                     row++;
                     end();
                     // error. to many results need to clarify address
@@ -419,7 +377,6 @@ public class LoadViewImpl extends Composite implements LoadView {
             if (member == null) {
                 callback.complete();
             }else{
-                household = member.getHousehold();
                 Geocoder geocoder = Geocoder.newInstance();
                 GeocoderRequest geoRequest = GeocoderRequest.newInstance();
                 geoRequest.setAddress(member.getAddress());
@@ -473,12 +430,71 @@ public class LoadViewImpl extends Composite implements LoadView {
 
     }
 
+    static class MultiAddressHandler implements ClickHandler {
+
+        private List<String> addresses;
+        private TextBox tb;
+
+        MultiAddressHandler(List<String> addresses, TextBox tb){
+            this.addresses = addresses;
+            this.tb = tb;
+        }
+
+        @Override
+        public void onClick(ClickEvent event) {
+            // show a popup to select an address
+            Widget source = (Widget) event.getSource();
+            int left = source.getAbsoluteLeft() + 10;
+            int top = source.getAbsoluteTop() + 10;
+            final DecoratedPopupPanel simplePopup = new DecoratedPopupPanel(true);
+            simplePopup.ensureDebugId("cwBasicPopup-simplePopup");
+            simplePopup.setWidth("400px");
+            VerticalPanel vp = new VerticalPanel();
+            vp.add(new HTML("Select a valid address"));
+            final List<RadioButton> rbList = new ArrayList<RadioButton>();
+            for (String addres : addresses) {
+                RadioButton rb = new RadioButton("address", addres);
+                vp.add(rb);
+                rbList.add(rb);
+            }
+            Button button = new Button("OK");
+            button.addClickHandler(new ClickHandler() {
+                @Override
+                public void onClick(ClickEvent event) {
+                    // get selected radio button
+                    String text = "";
+                    for (RadioButton radioButton : rbList) {
+                        if (radioButton.getValue()) {
+                            text = radioButton.getText();
+                            break;
+                        }
+                    }
+                    tb.setValue(text);
+                    simplePopup.setVisible(false);
+                    simplePopup.hide();
+                }
+            });
+            vp.add(button);
+            simplePopup.setWidget(vp);
+            simplePopup.setPopupPosition(left, top);
+
+            // Show the popup
+            simplePopup.show();
+
+
+            tb.setValue("updated");
+        }
+    }
+
     interface CallBack {
+
         void complete();
     }
 
-    interface RestCallBack{
+    interface RestCallBack {
+
         void success();
+
         void failure();
     }
 }

@@ -27,7 +27,10 @@ Uncomment this for XHTML entities
     </ui:style>
     <g:HTMLPanel>
         <g:HTMLPanel ui:field="topMenu" styleName="{style.mapPanel}">
-            <g:Button ui:field="load">Load Data</g:Button>
+            <g:HoriztalPanel>
+                <g:Button ui:field="load">Load Data</g:Button>
+                <g:Button ui:field="compute">Compute Members</g:Button>
+            </g:HoriztalPanel>
         </g:HTMLPanel>
         <g:HTMLPanel ui:field="map" styleName="{style.mapPanel}">
             <g:Label>Loadin map api</g:Label>

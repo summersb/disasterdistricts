@@ -299,15 +299,4 @@ public class DistrictResource {
             member.setDistrict(district);
         }
     }
-
-    public static void main(String[] args) throws IOException {
-        String dist = "{\"id\":0, \"leader\":{\"household\":\"Aguilar, Jennifer\",\"address\":\"1242 Barbara Drive, Vista, CA 92084, USA\",\"city\":null,\"zip\":null,\"email\":\"\",\"lat\":\"33.18710\",\"lng\":\"-117.2176550\",\"phone\":\"760-724-9179\",\"district\":-1}"
-                + ",\"assistant\":{\"household\":\"Alexander, Samantha Ann Turbyville\",\"address\":\"1371 Barbara Drive, Vista, CA 92084, USA\",\"city\":null,\"zip\":null,\"email\":\"\",\"lat\":\"33.184610\",\"lng\":\"-117.2179820\",\"phone\":\"\",\"district\":-1}}";
-        ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY);
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        DistrictJpa dmr = mapper.readValue(IOUtils.toInputStream(dist), DistrictJpa.class);
-        System.out.println(dmr.getId());
-        System.out.println(dmr.getLeader().getHousehold());
-        System.out.println(dmr.getAssistant().getHousehold());
-    }
 }
