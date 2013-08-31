@@ -44,7 +44,6 @@ import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
@@ -65,6 +64,7 @@ public class MapViewImpl extends Composite implements MapView {
     @UiField Button compute;
 
     private Activity activity;
+    private List<Member> memberList;
 
     public MapViewImpl() {
         initWidget(uiBinder.createAndBindUi(this));
@@ -199,6 +199,7 @@ public class MapViewImpl extends Composite implements MapView {
 
     @Override
     public void plotHouses(List<Member> members) {
+        memberList = members;
         for (final Member member : members) {
             LatLng center = LatLng.newInstance(Double.parseDouble(member.getLat()), Double.parseDouble(member.getLng()));
             MarkerOptions options = MarkerOptions.newInstance();
@@ -220,13 +221,8 @@ public class MapViewImpl extends Composite implements MapView {
 
     @UiHandler("compute")
     public void computeMembers(ClickEvent event){
-        // get district leaders
-        // get members within 1,000 meters
-        // compute road distance for each member
-
-        // assign all district 1 members to district 1
-        // as other districts compute their distance reassign members if they are
-        // closer to another district
+        ComputeDistrictMembers computeDistrictMembers = new ComputeDistrictMembers(activity.getClientFactory());
+        computeDistrictMembers.compute(memberList);
     }
 
     private native void createSpiderdfier()/*-{

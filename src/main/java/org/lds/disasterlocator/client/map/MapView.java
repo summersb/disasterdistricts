@@ -19,6 +19,7 @@ import com.google.gwt.place.shared.Place;
 import com.google.gwt.user.client.ui.IsWidget;
 import com.google.web.bindery.autobean.shared.AutoBeanFactory;
 import java.util.List;
+import org.lds.disasterlocator.client.ClientFactory;
 import org.lds.disasterlocator.shared.Member;
 
 /**
@@ -35,5 +36,6 @@ public interface MapView extends IsWidget {
 
         void goTo(Place place);
         AutoBeanFactory getAutoBeanFactory();
+        ClientFactory getClientFactory();
     }
 }

@@ -15,19 +15,13 @@
  */
 package org.lds.disasterlocator.shared;
 
-import com.google.web.bindery.autobean.shared.AutoBean;
-import com.google.web.bindery.autobean.shared.AutoBeanFactory;
+import java.util.List;
 
 /**
  *
  * @author Bert W Summers
  */
-public interface MyAutoBeanFactory extends AutoBeanFactory{
-
-    AutoBean<Member> member();
-    AutoBean<District> district();
-    AutoBean<MemberList> memberList();
-    AutoBean<File> file();
-    AutoBean<Row> row();
-    AutoBean<DistrictList> districtList();
+public interface DistrictList {
+    void setDistricts(List<District> members);
+    List<District> getDistricts();
 }

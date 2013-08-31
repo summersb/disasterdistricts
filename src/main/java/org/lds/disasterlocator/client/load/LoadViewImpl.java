@@ -76,20 +76,13 @@ public class LoadViewImpl extends Composite implements LoadView {
 
     private static final Logger logger = Logger.getLogger(LoadViewImpl.class.getName());
     private static MapUiBinder uiBinder = GWT.create(MapUiBinder.class);
-    @UiField
-    HTMLPanel panel;
-    @UiField
-    Button map;
-    @UiField
-    FormPanel form;
-    @UiField
-    Button submit;
-    @UiField
-    FileUpload fileUpload;
-    @UiField
-    HTMLPanel table;
-    @UiField
-    Button process;
+    @UiField HTMLPanel panel;
+    @UiField Button map;
+    @UiField FormPanel form;
+    @UiField Button submit;
+    @UiField FileUpload fileUpload;
+    @UiField HTMLPanel table;
+    @UiField Button process;
     @UiField HTMLPanel legend;
     @UiField MyResources res;
     @UiField Grid legendGrid;
@@ -179,6 +172,7 @@ public class LoadViewImpl extends Composite implements LoadView {
         for (HandlerRegistration handlerRegistration : addressHandlers) {
             handlerRegistration.removeHandler();
         }
+        addressHandlers.clear();
         final Button localProcessReference = process;
         for (int i = 0; i < listBoxList.size(); i++) {
             ListBox listBox = listBoxList.get(i);

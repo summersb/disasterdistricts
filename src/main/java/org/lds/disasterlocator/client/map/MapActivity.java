@@ -71,8 +71,13 @@ public class MapActivity extends AbstractActivity implements MapView.Activity{
         return clientFactory.getAutoBeanFactory();
     }
 
+    @Override
+    public ClientFactory getClientFactory(){
+        return clientFactory;
+    }
+
     private void loadMemberData() {
-       RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, "rest/member/list");
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, "rest/member/list");
         rb.setHeader("Content-Type", "application/json;charset=UTF-8");
         try {
             rb.sendRequest("", new RequestCallback() {
@@ -95,5 +100,4 @@ public class MapActivity extends AbstractActivity implements MapView.Activity{
             Logger.getLogger(MapViewImpl.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
 }
