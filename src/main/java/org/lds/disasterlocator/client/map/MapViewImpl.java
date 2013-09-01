@@ -221,7 +221,7 @@ public class MapViewImpl extends Composite implements MapView {
 
     @UiHandler("compute")
     public void computeMembers(ClickEvent event){
-        ComputeDistrictMembers computeDistrictMembers = new ComputeDistrictMembers(activity.getClientFactory());
+        ComputeDistrictMembers computeDistrictMembers = new ComputeDistrictMembers(activity.getClientFactory(), mapWidget);
         computeDistrictMembers.compute(memberList);
     }
 

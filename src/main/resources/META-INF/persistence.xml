@@ -20,9 +20,11 @@
   <persistence-unit name="disaster" transaction-type="RESOURCE_LOCAL">
     <provider>org.apache.openjpa.persistence.PersistenceProviderImpl</provider>
     <jta-data-source>java:/jboss/datasources/disaster</jta-data-source>
+    <non-jta-data-source>java:/jboss/datasources/disaster</non-jta-data-source>
     <class>org.lds.disasterlocator.server.rest.jpa.MemberJpa</class>
     <class>org.lds.disasterlocator.server.rest.jpa.DistrictJpa</class>
     <class>org.lds.disasterlocator.server.rest.jpa.AddressMapJpa</class>
+    <class>org.lds.disasterlocator.server.rest.jpa.DistanceJpa</class>
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
     <properties>
       <property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema(ForeignKeys=true)"/>
