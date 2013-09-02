@@ -39,6 +39,7 @@ public class ApplicationConfig extends Application {
      * given list with all resources defined in the project.
      */
     private void addRestResourceClasses(Set<Class<?>> resources) {
+        resources.add(org.lds.disasterlocator.server.rest.DistanceProxyService.class);
         resources.add(org.lds.disasterlocator.server.rest.DistrictResource.class);
         resources.add(org.lds.disasterlocator.server.rest.MemberResource.class);
         resources.add(org.lds.disasterlocator.server.rest.UploadResource.class);

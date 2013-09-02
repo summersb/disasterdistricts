@@ -49,7 +49,6 @@ import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
@@ -64,13 +63,13 @@ import org.lds.disasterlocator.shared.Member;
 public class MapViewImpl extends Composite implements MapView {
 
     private static MapUiBinder uiBinder = GWT.create(MapUiBinder.class);
-    @UiField
-    HTMLPanel map;
-    @UiField
-    HTMLPanel topMenu;
-    @UiField
-    Button load;
+    @UiField HTMLPanel map;
+    @UiField HTMLPanel topMenu;
+    @UiField Button load;
+    @UiField Button compute;
+
     private Activity activity;
+    private List<Member> memberList;
 
     public MapViewImpl() {
         initWidget(uiBinder.createAndBindUi(this));
@@ -252,6 +251,7 @@ public class MapViewImpl extends Composite implements MapView {
 
     @Override
     public void plotHouses(List<Member> members) {
+        memberList = members;
         for (final Member member : members) {
             LatLng center = LatLng.newInstance(Double.parseDouble(member.getLat()), Double.parseDouble(member.getLng()));
             MarkerOptions options = MarkerOptions.newInstance();
@@ -269,6 +269,12 @@ public class MapViewImpl extends Composite implements MapView {
     @UiHandler("load")
     public void loadData(ClickEvent event) {
         activity.goTo(new LoadPlace("loaddata"));
+    }
+
+    @UiHandler("compute")
+    public void computeMembers(ClickEvent event){
+        ComputeDistrictMembers computeDistrictMembers = new ComputeDistrictMembers(activity.getClientFactory(), mapWidget);
+        computeDistrictMembers.compute(memberList);
     }
 
     private native void createSpiderdfier()/*-{
