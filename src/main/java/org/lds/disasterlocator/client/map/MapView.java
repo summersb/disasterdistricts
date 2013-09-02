@@ -37,5 +37,8 @@ public interface MapView extends IsWidget {
         void goTo(Place place);
         AutoBeanFactory getAutoBeanFactory();
         ClientFactory getClientFactory();
+        boolean isLeader(Member member);
+        void setLeader(Member member);
+        void setAuto(Member member);
     }
 }

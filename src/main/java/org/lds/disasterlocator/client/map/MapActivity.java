@@ -22,11 +22,6 @@ import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
-import com.google.gwt.maps.client.base.LatLng;
-import com.google.gwt.maps.client.events.click.ClickMapEvent;
-import com.google.gwt.maps.client.events.click.ClickMapHandler;
-import com.google.gwt.maps.client.overlays.Marker;
-import com.google.gwt.maps.client.overlays.MarkerOptions;
 import com.google.gwt.place.shared.Place;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.AcceptsOneWidget;
@@ -34,11 +29,16 @@ import com.google.gwt.user.client.ui.IsWidget;
 import com.google.web.bindery.autobean.shared.AutoBean;
 import com.google.web.bindery.autobean.shared.AutoBeanCodex;
 import com.google.web.bindery.autobean.shared.AutoBeanFactory;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lds.disasterlocator.client.ClientFactory;
+import org.lds.disasterlocator.client.load.LoadViewImpl;
+import org.lds.disasterlocator.shared.District;
+import org.lds.disasterlocator.shared.DistrictList;
 import org.lds.disasterlocator.shared.Member;
 import org.lds.disasterlocator.shared.MemberList;
+import org.lds.disasterlocator.shared.MyConstants;
 
 /**
  *
@@ -48,6 +48,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
 
     private final ClientFactory clientFactory;
     private final MapView view;
+    private List<District> districtList;
 
     public MapActivity(ClientFactory factory) {
         clientFactory = factory;
@@ -74,7 +75,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
     }
 
     @Override
-    public ClientFactory getClientFactory(){
+    public ClientFactory getClientFactory() {
         return clientFactory;
     }
 
@@ -113,8 +114,9 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
 
                     String json = response.getText();
                     AutoBeanFactory autoBeanFactory = clientFactory.getAutoBeanFactory();
-                    AutoBean<DistrictList> memberListAB = AutoBeanCodex.decode(autoBeanFactory, DistrictList.class, "{\"districts\":" + json + "}");
+                    AutoBean<DistrictList> districtListAB = AutoBeanCodex.decode(autoBeanFactory, DistrictList.class, "{\"districts\":" + json + "}");
                     DistrictList districtlist = districtListAB.as();
+                    districtList = districtlist.getDistricts();
                 }
 
                 @Override
@@ -124,6 +126,67 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
             });
         } catch (RequestException ex) {
             Logger.getLogger(MapViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Override
+    public boolean isLeader(Member member) {
+        boolean result = false;
+        for (District district : districtList) {
+            if (district.getLeader() != null && member.getHousehold().equals(district.getLeader().getHousehold())) {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public void setLeader(Member member) {
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, "rest/district/create/" + member.getHousehold());
+        rb.setHeader("Content-Type", "application/json;charset=UTF-8");
+        try {
+            rb.sendRequest("", new RequestCallback() {
+                @Override
+                public void onResponseReceived(Request request, Response response) {
+                    loadDistrictData();
+                }
+
+                @Override
+                public void onError(Request request, Throwable exception) {
+                    Window.alert("Error occured " + exception.getLocalizedMessage());
+                }
+            });
+        } catch (RequestException ex) {
+            Logger.getLogger(MapViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void setAuto(Member member) {
+        AutoBeanFactory factory = getAutoBeanFactory();
+        AutoBean<Member> memberAB = factory.create(Member.class, member);
+        String json = AutoBeanCodex.encode(memberAB).getPayload();
+
+
+        try {
+            RequestBuilder rb = new RequestBuilder(RequestBuilder.PUT, MyConstants.REST_URL + "member");
+            rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
+            rb.sendRequest(json, new RequestCallback() {
+
+                @Override
+                public void onResponseReceived(Request request, Response response) {
+                    if(response.getStatusCode() != 200){
+                        Window.alert("Failed to persist member");
+                    }
+                }
+
+                @Override
+                public void onError(Request request, Throwable exception) {
+                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                }
+            });
+        } catch (RequestException ex) {
+            Logger.getLogger(MapViewImpl.class.getName()).log(Level.SEVERE, "Failed to persist member" + member.getHousehold() + ":" + member.getAddress(), ex);
         }
     }
 }

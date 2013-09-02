@@ -63,11 +63,14 @@ import org.lds.disasterlocator.shared.Member;
 public class MapViewImpl extends Composite implements MapView {
 
     private static MapUiBinder uiBinder = GWT.create(MapUiBinder.class);
-    @UiField HTMLPanel map;
-    @UiField HTMLPanel topMenu;
-    @UiField Button load;
-    @UiField Button compute;
-
+    @UiField
+    HTMLPanel map;
+    @UiField
+    HTMLPanel topMenu;
+    @UiField
+    Button load;
+    @UiField
+    Button compute;
     private Activity activity;
     private List<Member> memberList;
 
@@ -146,7 +149,8 @@ public class MapViewImpl extends Composite implements MapView {
         return rollover;
     }
 
-    protected void drawInfoWindow(Marker marker, MouseEvent mouseEvent, Member member) {
+    protected void drawInfoWindow(Marker marker, MouseEvent mouseEvent, final Member member) {
+
         if (marker == null || mouseEvent == null) {
             return;
         }
@@ -158,24 +162,31 @@ public class MapViewImpl extends Composite implements MapView {
         Label lbl = new Label(tokens[0]);
         vert.add(lbl);
         CheckBox checkbox = new CheckBox("District Leader", true);
+        checkbox.setValue(activity.isLeader(member));
+
 
         // Hook up a handler to find out when it's clicked.
         checkbox.addClickHandler(new ClickHandler() {
             public void onClick(ClickEvent event) {
-                boolean checked = ((CheckBox) event.getSource()).isChecked();
-                Window.alert("District Leader " + (checked ? "" : "not ") + "checked");
+                boolean checked = ((CheckBox) event.getSource()).getValue();
+                if (checked) {
+                    activity.setLeader(member);
+                } else {
+                }
             }
         });
 
         vert.add(checkbox);
         checkbox = new CheckBox("Automatic Assignment", true);
+        checkbox.setValue(member.isAuto());
 
         // Hook up a handler to find out when it's clicked.
         checkbox.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                boolean checked = ((CheckBox) event.getSource()).isChecked();
-                Window.alert("Automatic Assignment " + (checked ? "" : "not ") + "checked");
+                boolean checked = ((CheckBox) event.getSource()).getValue();
+                member.setAuto(checked);
+                activity.setAuto(member);
             }
         });
 
@@ -272,9 +283,9 @@ public class MapViewImpl extends Composite implements MapView {
     }
 
     @UiHandler("compute")
-    public void computeMembers(ClickEvent event){
-        ComputeDistrictMembers computeDistrictMembers = new ComputeDistrictMembers(activity.getClientFactory(), mapWidget);
-        computeDistrictMembers.compute(memberList);
+    public void computeMembers(ClickEvent event) {
+//        ComputeDistrictMembers computeDistrictMembers = new ComputeDistrictMembers(activity.getClientFactory(), mapWidget);
+//        computeDistrictMembers.compute(memberList);
     }
 
     private native void createSpiderdfier()/*-{

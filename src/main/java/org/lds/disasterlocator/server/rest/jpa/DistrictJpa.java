@@ -69,9 +69,9 @@ public class DistrictJpa implements Serializable, District {
         }
         return true;
     }
-    @OneToOne(cascade= CascadeType.ALL)
+    @OneToOne(cascade= CascadeType.ALL, targetEntity = MemberJpa.class)
     private Member leader;
-    @OneToOne(cascade= CascadeType.ALL)
+    @OneToOne(cascade= CascadeType.ALL, targetEntity = MemberJpa.class)
     private Member assistant;
 
     /**
