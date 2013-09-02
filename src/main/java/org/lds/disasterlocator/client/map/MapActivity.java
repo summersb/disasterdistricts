@@ -1,17 +1,17 @@
 /**
  * Copyright (C) 2013
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.lds.disasterlocator.client.map;
 
@@ -44,11 +44,12 @@ import org.lds.disasterlocator.shared.MemberList;
  *
  * @author Bert W Summers
  */
-public class MapActivity extends AbstractActivity implements MapView.Activity{
+public class MapActivity extends AbstractActivity implements MapView.Activity {
+
     private final ClientFactory clientFactory;
     private final MapView view;
 
-    public MapActivity(ClientFactory factory){
+    public MapActivity(ClientFactory factory) {
         clientFactory = factory;
         view = clientFactory.getMapView();
     }
@@ -59,6 +60,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity{
         panel.setWidget((IsWidget) view);
         view.renderMap();
         loadMemberData();
+        loadDistrictData();
     }
 
     @Override
@@ -72,7 +74,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity{
     }
 
     private void loadMemberData() {
-       RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, "rest/member/list");
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, "rest/member/list");
         rb.setHeader("Content-Type", "application/json;charset=UTF-8");
         try {
             rb.sendRequest("", new RequestCallback() {
@@ -96,4 +98,27 @@ public class MapActivity extends AbstractActivity implements MapView.Activity{
         }
     }
 
+    private void loadDistrictData() {
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, "rest/district/list");
+        rb.setHeader("Content-Type", "application/json;charset=UTF-8");
+        try {
+            rb.sendRequest("", new RequestCallback() {
+                @Override
+                public void onResponseReceived(Request request, Response response) {
+
+                    String json = response.getText();
+                    AutoBeanFactory autoBeanFactory = clientFactory.getAutoBeanFactory();
+                    AutoBean<DistrictList> memberListAB = AutoBeanCodex.decode(autoBeanFactory, DistrictList.class, "{\"districts\":" + json + "}");
+                    DistrictList districtlist = districtListAB.as();
+                }
+
+                @Override
+                public void onError(Request request, Throwable exception) {
+                    Window.alert("Error occured " + exception.getLocalizedMessage());
+                }
+            });
+        } catch (RequestException ex) {
+            Logger.getLogger(MapViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 }

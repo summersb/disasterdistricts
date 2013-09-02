@@ -18,6 +18,10 @@ package org.lds.disasterlocator.client.map;
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.KeyCodes;
+import com.google.gwt.event.dom.client.KeyPressEvent;
+import com.google.gwt.event.dom.client.KeyPressHandler;
 import com.google.gwt.geolocation.client.Geolocation;
 import com.google.gwt.geolocation.client.Position;
 import com.google.gwt.geolocation.client.PositionError;
@@ -43,6 +47,7 @@ import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HTMLPanel;
+import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.TextBox;
@@ -146,28 +151,75 @@ public class MapViewImpl extends Composite implements MapView {
         if (marker == null || mouseEvent == null) {
             return;
         }
-        VerticalPanel panel = new VerticalPanel();
+        VerticalPanel vert = new VerticalPanel();
 
         HTML html = new HTML("<b>" + member.getHousehold() + "</b>");
-        panel.add(html);
+        vert.add(html);
         String[] tokens = member.getAddress().split("[,]");
         Label lbl = new Label(tokens[0]);
-        panel.add(lbl);
-        CheckBox checkbox  = new CheckBox("District Leader", true);
-        panel.add(checkbox);
-        checkbox  = new CheckBox("Automatic Assignment", true);
-        panel.add(checkbox);
-        lbl = new Label("District: " + member.getDistrict());
-        panel.add(lbl);
+        vert.add(lbl);
+        CheckBox checkbox = new CheckBox("District Leader", true);
+
+        // Hook up a handler to find out when it's clicked.
+        checkbox.addClickHandler(new ClickHandler() {
+            public void onClick(ClickEvent event) {
+                boolean checked = ((CheckBox) event.getSource()).isChecked();
+                Window.alert("District Leader " + (checked ? "" : "not ") + "checked");
+            }
+        });
+
+        vert.add(checkbox);
+        checkbox = new CheckBox("Automatic Assignment", true);
+
+        // Hook up a handler to find out when it's clicked.
+        checkbox.addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                boolean checked = ((CheckBox) event.getSource()).isChecked();
+                Window.alert("Automatic Assignment " + (checked ? "" : "not ") + "checked");
+            }
+        });
+
+        vert.add(checkbox);
+        HorizontalPanel horiz = new HorizontalPanel();
+        lbl = new Label("District:");
+        horiz.add(lbl);
         TextBox tb = new TextBox();
-         panel.add(tb);
+
+        tb.addKeyPressHandler(new KeyPressHandler() {
+            public void onKeyPress(KeyPressEvent event) {
+                if (event.getCharCode() == KeyCodes.KEY_ENTER) {
+                    setDistrict();
+                }
+            }
+        });
+
+        tb.setValue(getDistrict(member));
+        horiz.add(tb);
+        vert.add(horiz);
 
         InfoWindowOptions options = InfoWindowOptions.newInstance();
-        options.setContent(panel);
+        options.setContent(vert);
 
         InfoWindow iw = InfoWindow.newInstance(options);
 
         iw.open(mapWidget, marker);
+    }
+
+    private String getDistrict(Member member) {
+        int district;
+        String result;
+        district = member.getDistrict();
+        if (district < 0) {
+            result = "unassigned";
+        } else {
+            result = String.valueOf(member.getDistrict());
+        }
+        return result;
+    }
+
+    private void setDistrict() {
+        Window.alert("setDistrict");
     }
 
     private String rollOver(Member member) {
@@ -178,7 +230,7 @@ public class MapViewImpl extends Composite implements MapView {
         tokens = member.getAddress().split("[,]");
         rollover += tokens[0];
         rollover += "\n";
-        rollover += "District: " + member.getDistrict();
+        rollover += "District: " + getDistrict(member);
         return rollover;
     }
 
