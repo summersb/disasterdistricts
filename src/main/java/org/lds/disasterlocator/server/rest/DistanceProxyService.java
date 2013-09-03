@@ -136,6 +136,9 @@ public class DistanceProxyService {
                         saveDistance(fromLat, fromLng, latLng.getJb(), latLng.getKb(), element.getDistance().getValue());
                     }
                 }else{
+        // note only request 10 at a time
+        // check status to see if delay required
+        // add address to db
                     logger.severe("Received bad response " + response.getStatus());
                     return Response.serverError().build();
                 }
@@ -143,9 +146,6 @@ public class DistanceProxyService {
         } catch (IOException ex) {
             logger.log(Level.SEVERE, "Bad URL for distance matrix", ex);
         }
-        // note only request 10 at a time
-        // check status to see if delay required
-        // add address to db
         return Response.ok().build();
     }
 

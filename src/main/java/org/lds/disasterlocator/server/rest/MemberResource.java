@@ -57,6 +57,10 @@ public class MemberResource {
         emf = EntityManagerFactoryHelper.createEntityManagerFactory();
     }
 
+    MemberResource(EntityManagerFactory emf){
+        this.emf = emf;
+    }
+
     @GET
     @Path("/list")
     public List<MemberJpa> getWardList() {

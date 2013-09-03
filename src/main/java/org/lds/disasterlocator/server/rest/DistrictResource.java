@@ -23,8 +23,10 @@ import java.util.Iterator;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -63,6 +65,10 @@ public class DistrictResource {
         emf = EntityManagerFactoryHelper.createEntityManagerFactory();
     }
 
+    DistrictResource(EntityManagerFactory emf){
+        this.emf = emf;
+    }
+
     @Path("/list")
     @GET
     public List<DistrictJpa> getDistrict() {
@@ -75,6 +81,18 @@ public class DistrictResource {
         return resultList;
     }
 
+    @DELETE
+    @Path("{leader}")
+    public Response deleteDistrict(@PathParam("leader") String leader){
+        EntityManager em = emf.createEntityManager();
+        em.getTransaction().begin();
+        Query query = em.createNamedQuery("District.deleteByLeader").setParameter("leader", leader);
+        query.executeUpdate();
+        em.getTransaction().commit();
+        em.close();
+        return Response.ok().build();
+    }
+
     @POST
     @Path("/create/{leader}")
     @Consumes(MediaType.WILDCARD)
@@ -84,6 +102,9 @@ public class DistrictResource {
         TypedQuery<DistrictJpa> find = em.createQuery("select d from District d", DistrictJpa.class);
         int id = find.getResultList().size();
         MemberJpa leader = em.find(MemberJpa.class, leaderHousehold);
+        if(leader.getDistrict() != 0){
+            id = leader.getDistrict();
+        }
         DistrictJpa d = new DistrictJpa();
         d.setId(id);
         d.setLeader(leader);

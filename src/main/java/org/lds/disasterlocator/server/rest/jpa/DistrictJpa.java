@@ -23,6 +23,8 @@ import java.util.logging.Logger;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
@@ -38,6 +40,9 @@ import org.lds.disasterlocator.shared.Member;
  */
 @Entity(name="District")
 @Table(name = "District")
+@NamedQueries({
+    @NamedQuery(name = "District.deleteByLeader", query = "delete from District d where d.leader.household=:leader")
+})
 public class DistrictJpa implements Serializable, District {
 
     @Id
@@ -69,9 +74,9 @@ public class DistrictJpa implements Serializable, District {
         }
         return true;
     }
-    @OneToOne(cascade= CascadeType.ALL)
+    @OneToOne(cascade= CascadeType.ALL, targetEntity = MemberJpa.class)
     private Member leader;
-    @OneToOne(cascade= CascadeType.ALL)
+    @OneToOne(cascade= CascadeType.ALL, targetEntity = MemberJpa.class)
     private Member assistant;
 
     /**

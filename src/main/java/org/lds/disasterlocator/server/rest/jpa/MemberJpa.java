@@ -98,7 +98,7 @@ public class MemberJpa implements Serializable, Member {
      */
     @Override
     public void setHousehold(String houseHold) {
-        this.setHousehold(houseHold);
+        this.household = houseHold;
     }
 
     /**
