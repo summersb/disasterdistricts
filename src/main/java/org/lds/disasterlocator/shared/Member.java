@@ -112,5 +112,8 @@ public interface Member {
      * @param zip the zip to set
      */
     void setZip(String zip);
+    
+    boolean isAuto();
+    void setAuto(boolean auto);
 
 }

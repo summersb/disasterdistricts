@@ -62,6 +62,7 @@ public class MemberJpa implements Serializable, Member {
     private String lng;
     private String phone;
     private int district;
+    private boolean auto;
 
     @Override
     public int hashCode() {
@@ -241,5 +242,19 @@ public class MemberJpa implements Serializable, Member {
      */
     public void setState(String state) {
         this.state = state;
+    }
+
+    /**
+     * @return the auto
+     */
+    public boolean isAuto() {
+        return auto;
+    }
+
+    /**
+     * @param auto the auto to set
+     */
+    public void setAuto(boolean auto) {
+        this.auto = auto;
     }
 }
