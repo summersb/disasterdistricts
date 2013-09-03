@@ -143,7 +143,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
 
     @Override
     public void setLeader(Member member) {
-        RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, "rest/district/create/" + member.getHousehold());
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, "rest/district/" + member.getHousehold());
         rb.setHeader("Content-Type", "application/json;charset=UTF-8");
         try {
             rb.sendRequest("", new RequestCallback() {
@@ -175,7 +175,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
 
                 @Override
                 public void onResponseReceived(Request request, Response response) {
-                    if(response.getStatusCode() != 200){
+                    if(response.getStatusCode() != MyConstants.OK){
                         Window.alert("Failed to persist member");
                     }
                 }

@@ -22,7 +22,6 @@
     <non-jta-data-source/>
     <class>org.lds.disasterlocator.server.rest.jpa.MemberJpa</class>
     <class>org.lds.disasterlocator.server.rest.jpa.DistrictJpa</class>
-    <class>org.lds.disasterlocator.server.rest.jpa.AddressMapJpa</class>
     <class>org.lds.disasterlocator.server.rest.jpa.DistanceJpa</class>
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
     <properties>

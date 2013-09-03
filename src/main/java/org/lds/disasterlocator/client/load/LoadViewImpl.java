@@ -236,6 +236,7 @@ public class LoadViewImpl extends Composite implements LoadView {
             }, this);
         } else {
             Window.alert("You must select at least household and address to continue");
+            process.setEnabled(true);
         }
     }
 
@@ -332,8 +333,8 @@ public class LoadViewImpl extends Composite implements LoadView {
                     GeocoderGeometry geometry = gr.getGeometry();
                     LatLng location = geometry.getLocation();
                     member.setAddress(gr.getFormatted_Address());
-                    member.setLat(Double.toString(location.getLatitude()));
-                    member.setLng(Double.toString(location.getLongitude()));
+                    member.setLat(location.getLatitude());
+                    member.setLng(location.getLongitude());
                     // when geocode is complete send row to server with lat/long to insert record
                     AutoBean<Member> memberAB = factory.create(Member.class, member);
                     String json = AutoBeanCodex.encode(memberAB).getPayload();

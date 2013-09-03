@@ -264,7 +264,7 @@ public class MapViewImpl extends Composite implements MapView {
     public void plotHouses(List<Member> members) {
         memberList = members;
         for (final Member member : members) {
-            LatLng center = LatLng.newInstance(Double.parseDouble(member.getLat()), Double.parseDouble(member.getLng()));
+            LatLng center = LatLng.newInstance(member.getLat(), member.getLng());
             MarkerOptions options = MarkerOptions.newInstance();
             options.setPosition(center);
             options.setTitle(rollOver(member));
@@ -284,8 +284,8 @@ public class MapViewImpl extends Composite implements MapView {
 
     @UiHandler("compute")
     public void computeMembers(ClickEvent event) {
-//        ComputeDistrictMembers computeDistrictMembers = new ComputeDistrictMembers(activity.getClientFactory(), mapWidget);
-//        computeDistrictMembers.compute(memberList);
+        ComputeDistrictMembers computeDistrictMembers = new ComputeDistrictMembers(activity.getClientFactory(), mapWidget);
+        computeDistrictMembers.compute(memberList);
     }
 
     private native void createSpiderdfier()/*-{

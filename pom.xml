@@ -213,6 +213,9 @@
                 <configuration>
                     <includes>**/jpa/*.class</includes>
                     <enforcePropertyRestrictions>true</enforcePropertyRestrictions>
+                    <addDefaultConstructor>true</addDefaultConstructor>
+                    <connectionDriverName>com.mysql.jdbc.Driver</connectionDriverName>
+                    <sqlFile>${basedir}/src/main/sql/database.sql</sqlFile>
                 </configuration>
                 <executions>
                     <execution>
@@ -246,6 +249,7 @@
                     </includes>
                     <excludes>
                         <exclude>**/json/model/**</exclude>
+                        <exclude>src/main/sql/**</exclude>
                         <!-- exclude files for licensing -->
                         <!-- <exclude>**/example/apache/commons/**</exclude> -->
                     </excludes>

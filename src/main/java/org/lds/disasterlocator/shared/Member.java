@@ -50,12 +50,12 @@ public interface Member {
     /**
      * @return the lat
      */
-    String getLat();
+    double getLat();
 
     /**
      * @return the lng
      */
-    String getLng();
+    double getLng();
 
     /**
      * @return the phone
@@ -96,12 +96,12 @@ public interface Member {
     /**
      * @param lat the lat to set
      */
-    void setLat(String lat);
+    void setLat(double lat);
 
     /**
      * @param lng the lng to set
      */
-    void setLng(String lng);
+    void setLng(double lng);
 
     /**
      * @param phone the phone to set

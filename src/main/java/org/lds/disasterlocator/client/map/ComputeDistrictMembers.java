@@ -77,18 +77,18 @@ public class ComputeDistrictMembers {
         // get members within 1,000 meters
         for (District district : list.getDistricts()) {
             Member leader = district.getLeader();
-            String lat = leader.getLat();
-            String lng = leader.getLng();
+            double lat = leader.getLat();
+            double lng = leader.getLng();
             DistanceMatrixRequest dmr = DistanceMatrixRequest.newInstance();
-            LatLng leaderLatLng = LatLng.newInstance(Double.parseDouble(lat), Double.parseDouble(lng));
+            LatLng leaderLatLng = LatLng.newInstance(lat, lng);
             JsArray array = (JsArray) JsArray.createArray();
             array.push(leaderLatLng);
             dmr.setOrigins(array);
             JsArray memberArray = (JsArray) JsArray.createArray();
             for (Member member : memberList) {
-                String memberlat = member.getLat();
-                String memberlng = member.getLng();
-                LatLng memberlatlng = LatLng.newInstance(Double.parseDouble(memberlat), Double.parseDouble(memberlng));
+                double memberlat = member.getLat();
+                double memberlng = member.getLng();
+                LatLng memberlatlng = LatLng.newInstance(memberlat, memberlng);
                 double distance = SphericalUtils.computeDistanceBetween(leaderLatLng, memberlatlng);
                 if(distance < 1000){
                     if(!member.getHousehold().equals(leader.getHousehold())){

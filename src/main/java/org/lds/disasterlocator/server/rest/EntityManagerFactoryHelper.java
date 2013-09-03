@@ -15,8 +15,6 @@
  */
 package org.lds.disasterlocator.server.rest;
 
-import java.util.HashMap;
-import java.util.Map;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
@@ -26,7 +24,8 @@ import javax.persistence.Persistence;
  */
 public class EntityManagerFactoryHelper {
 
+    private final static EntityManagerFactory emf = Persistence.createEntityManagerFactory("disaster");
     public static EntityManagerFactory createEntityManagerFactory() {
-        return Persistence.createEntityManagerFactory("disaster");
+        return emf;
     }
 }

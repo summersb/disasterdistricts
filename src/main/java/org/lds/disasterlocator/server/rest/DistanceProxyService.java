@@ -115,7 +115,6 @@ public class DistanceProxyService {
         }
         sb.deleteCharAt(sb.length()-1);
         sb.append("&sensor=false&mode=walking&units=metric");
-        logger.info(sb.toString());
         try {
             // request url
             URL url = new URL(sb.toString());

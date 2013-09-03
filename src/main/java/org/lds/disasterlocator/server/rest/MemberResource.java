@@ -26,18 +26,17 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.lds.disasterlocator.Csv2Json;
 import org.lds.disasterlocator.server.rest.jpa.DistrictJpa;
-import org.lds.disasterlocator.server.rest.json.model.GeocodeResponse;
 import org.lds.disasterlocator.shared.Member;
 import org.lds.disasterlocator.shared.MyAutoBeanFactory;
 
@@ -72,7 +71,7 @@ public class MemberResource {
     }
 
     @GET
-    @Path("csv")
+    @Path("/csv")
     @Produces(MediaType.TEXT_PLAIN)
 //    @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public String getWardListAsCsv() {
@@ -115,22 +114,14 @@ public class MemberResource {
     @PUT
     public Response updateMember(MemberJpa member) throws Exception {
         EntityManager em = emf.createEntityManager();
-        em.getTransaction().begin();
         MemberJpa find = em.find(MemberJpa.class, member.getHousehold());
         if (find != null) {
-            if (!find.getAddress().equals(member.getAddress())) {
-                // run google geo query to get full address
-                GeocodeResponse geo = Csv2Json.getGeo(member.getAddress());
-                member.setAddress(geo.getResults()[0].getFormattedAddress());
-//                member.setCity(locatity.getLocalityName());
-//                member.setZip(locatity.getPostalCode().getPostalCodeNumber());
-            }
-            // save to server
+            em.getTransaction().begin();
             em.merge(member);
+            em.getTransaction().commit();
         } else {
-            throw new WebApplicationException(Status.NOT_FOUND);
+            return Response.status(Status.NOT_FOUND).build();
         }
-        em.getTransaction().commit();
 
         return Response.ok().build();
     }
@@ -152,6 +143,31 @@ public class MemberResource {
         em.persist(member);
         em.getTransaction().commit();
         em.close();
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/{household}")
+    public Response getMember(@PathParam("household") String household){
+        EntityManager em = emf.createEntityManager();
+        MemberJpa member = em.find(MemberJpa.class, household);
+        if(member == null){
+            return Response.status(Status.NOT_FOUND).build();
+        }
+        return Response.ok().entity(member).build();
+    }
+
+    @DELETE
+    @Path("/{household}")
+    public Response deleteMember(@PathParam("household")String household){
+        EntityManager em = emf.createEntityManager();
+        MemberJpa member = em.find(MemberJpa.class, household);
+        if(member == null){
+            return Response.status(Status.NOT_FOUND).build();
+        }
+        em.getTransaction().begin();
+        em.remove(member);
+        em.getTransaction().commit();
         return Response.ok().build();
     }
 }

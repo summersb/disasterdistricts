@@ -58,8 +58,8 @@ public class MemberJpa implements Serializable, Member {
     private String state;
     private String zip;
     private String email;
-    private String lat;
-    private String lng;
+    private double lat;
+    private double lng;
     private String phone;
     private int district;
     private boolean auto;
@@ -154,7 +154,7 @@ public class MemberJpa implements Serializable, Member {
      * @return the lat
      */
     @Override
-    public String getLat() {
+    public double getLat() {
         return lat;
     }
 
@@ -162,7 +162,7 @@ public class MemberJpa implements Serializable, Member {
      * @param lat the lat to set
      */
     @Override
-    public void setLat(String lat) {
+    public void setLat(double lat) {
         this.lat = lat;
     }
 
@@ -170,7 +170,7 @@ public class MemberJpa implements Serializable, Member {
      * @return the lng
      */
     @Override
-    public String getLng() {
+    public double getLng() {
         return lng;
     }
 
@@ -178,7 +178,7 @@ public class MemberJpa implements Serializable, Member {
      * @param lng the lng to set
      */
     @Override
-    public void setLng(String lng) {
+    public void setLng(double lng) {
         this.lng = lng;
     }
 
