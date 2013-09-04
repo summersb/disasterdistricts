@@ -96,8 +96,8 @@ public class DistanceProxyService {
     /**
      * Add lat/long to distance table for members to leaders
      *
-     * @param DistanceMatrixRequest must contain only one origin and that must be
-     * the leaders lat/lng.  Can contain any number of destinations.
+     * @param DistanceMatrixRequest must contain only one origin and that must
+     * be the leaders lat/lng. Can contain any number of destinations.
      * @return
      */
     @POST
@@ -134,16 +134,7 @@ public class DistanceProxyService {
                     switch (response.getStatus()) {
                         case "OK":
                             logger.log(Level.INFO, "Successful query {0}", sb.toString());
-                            List<Row> rows = response.getRows();
-                            Row row = rows.get(0);
-                            List<Element> elements = row.getElements();
-                            List<LatLng> destinations = dmr.getDestinations();
-                            for (int j = 0; j < elements.size(); j++) {
-                                LatLng latLng = destinations.get(j);
-                                // save address in db
-                                Element element = elements.get(j);
-                                saveDistance(leaderLat, leaderLng, latLng.getJb(), latLng.getKb(), element.getDistance().getValue());
-                            }
+                            saveAddresses(response, dmr, leaderLat, leaderLng);
                             break;
                         case "OVER_QUERY_LIMIT":
                             // need to deal with pause and run again
@@ -154,8 +145,11 @@ public class DistanceProxyService {
                                     response = runQuery(sb.toString());
                                     logger.log(Level.INFO, "Received {0}", response.getStatus());
                                 }
-                                if(!response.getStatus().equals("OK")){
-                                    logger.severe("Received response " + response.getStatus() + " for query "+ sb.toString());
+                                if ("OK".equals(response.getStatus())) {
+                                    logger.log(Level.INFO, "Successful query {0}", sb.toString());
+                                    saveAddresses(response, dmr, leaderLat, leaderLng);
+                                } else {
+                                    logger.log(Level.SEVERE, "Received response {0} for query {1}", new Object[]{response.getStatus(), sb.toString()});
                                 }
                             } catch (InterruptedException ex) {
                                 logger.log(Level.SEVERE, null, ex);
@@ -289,5 +283,18 @@ public class DistanceProxyService {
         }
         return id;
 
+    }
+
+    private void saveAddresses(DistanceMatrixResponse response, DistrictMatrixRequest dmr, double leaderLat, double leaderLng) {
+        List<Row> rows = response.getRows();
+        Row row = rows.get(0);
+        List<Element> elements = row.getElements();
+        List<LatLng> destinations = dmr.getDestinations();
+        for (int j = 0; j < elements.size(); j++) {
+            LatLng latLng = destinations.get(j);
+            // save address in db
+            Element element = elements.get(j);
+            saveDistance(leaderLat, leaderLng, latLng.getJb(), latLng.getKb(), element.getDistance().getValue());
+        }
     }
 }
