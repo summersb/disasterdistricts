@@ -1,17 +1,17 @@
 /**
  * Copyright (C) 2013
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.lds.disasterlocator.server.rest;
 
@@ -75,9 +75,9 @@ public class DistanceProxyService {
     @GET
     @Path("/{leaderlat}/{leaderlng}/{memberlat}/{memberlng}")
     public Response getDistance(@PathParam("leaderlat") double leaderLat,
-        @PathParam("leaderlat") double leaderLng,
-        @PathParam("memberlat") double memberLat,
-        @PathParam("memberlat") double memberLng){
+            @PathParam("leaderlat") double leaderLng,
+            @PathParam("memberlat") double memberLat,
+            @PathParam("memberlat") double memberLng) {
         EntityManager em = emf.createEntityManager();
         TypedQuery<DistanceJpa> query = em.createNamedQuery("Distance.find", DistanceJpa.class);
         query.setParameter("leaderLat", leaderLat);
@@ -85,7 +85,7 @@ public class DistanceProxyService {
         query.setParameter("memberLat", memberLat);
         query.setParameter("memberLng", memberLng);
         List<DistanceJpa> resultList = query.getResultList();
-        if(resultList.isEmpty()){
+        if (resultList.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
         DistanceJpa distance = resultList.get(0);
@@ -94,64 +94,102 @@ public class DistanceProxyService {
     }
 
     @POST
-    public Response getDistanceMatrix(DistrictMatrixRequest dmr){
-        StringBuilder sb = new StringBuilder("http://maps.googleapis.com/maps/api/distancematrix/json?");
+    public Response getDistanceMatrix(DistrictMatrixRequest dmr) {
         // add origin
         double leaderLat = dmr.getOrigins().get(0).getJb();
         double leaderLng = dmr.getOrigins().get(0).getKb();
+        StringBuilder sb = new StringBuilder("http://maps.googleapis.com/maps/api/distancematrix/json?");
         sb.append("origins=").append(leaderLat).append(",").append(leaderLng);
         // add destinations
         sb.append("&destinations=");
-        // TODO loop here and send request for every 10 address
-        for (LatLng latLng : dmr.getDestinations()) {
-            double memberLat = latLng.getJb();
-            double memberLng = latLng.getKb();
-            // check if we already have destination
-            Response distance = getDistance(leaderLat, leaderLng, memberLat, memberLng);
-            if(distance.getStatus() == 404){
-                sb.append(memberLat).append(",").append(memberLng);
-                sb.append("|");
+        int count = 1;
+        for (int i = 0; i < dmr.getDestinations().size() + 1; i++) {
+            if (count % 10 != 0 && i < dmr.getDestinations().size()) {
+                LatLng latLng = dmr.getDestinations().get(i);
+                double memberLat = latLng.getJb();
+                double memberLng = latLng.getKb();
+                // check if we already have destination
+                Response distance = getDistance(leaderLat, leaderLng, memberLat, memberLng);
+                if (distance.getStatus() == 404) {
+                    count++;
+                    sb.append(memberLat).append(",").append(memberLng);
+                    sb.append("|");
+                }
+            } else {
+                if (count > 1) {
+                    count = 1;
+                    // make request, then reset sb and start again
+                    // delete the trailing pipe character
+                    sb.deleteCharAt(sb.length() - 1);
+                    sb.append("&sensor=false&mode=walking&units=metric");
+                    // request url
+                    DistanceMatrixResponse response = runQuery(sb.toString());
+
+                    if (response.getStatus().equals("OK")) {
+                        logger.log(Level.INFO, "Successful query {0}", sb.toString());
+                        List<Row> rows = response.getRows();
+                        Row row = rows.get(0);
+                        List<Element> elements = row.getElements();
+                        List<LatLng> destinations = dmr.getDestinations();
+                        for (int j = 0; j < elements.size(); j++) {
+                            LatLng latLng = destinations.get(j);
+                            // save address in db
+                            Element element = elements.get(j);
+                            saveDistance(leaderLat, leaderLng, latLng.getJb(), latLng.getKb(), element.getDistance().getValue());
+                        }
+                    } else if ("OVER_QUERY_LIMIT".equals(response.getStatus())) {
+                        // need to deal with pause and run again
+                        logger.info(("Over query limit, sleeping 10 seconds"));
+                        try {
+                            Thread.sleep(10000);
+                            while ("OVER_QUERY_LIMIT".equals(response.getStatus())) {
+                                response = runQuery(sb.toString());
+                                logger.log(Level.INFO, "Received {0}", response.getStatus());
+                            }
+                            if(!response.getStatus().equals("OK")){
+                                logger.severe("Received response " + response.getStatus() + " for query "+ sb.toString());
+                            }
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(DistanceProxyService.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    } else {
+                        // note only request 10 at a time
+                        // check status to see if delay required
+                        // add address to db
+                        String[] args = {response.getStatus(), sb.toString()};
+                        logger.log(Level.SEVERE, "Received bad response {0} for query {1}", args);
+                        return Response.serverError().build();
+                    }
+                    sb = new StringBuilder("http://maps.googleapis.com/maps/api/distancematrix/json?");
+                    sb.append("origins=").append(leaderLat).append(",").append(leaderLng);
+                    // add destinations
+                    sb.append("&destinations=");
+                }
             }
         }
-        sb.deleteCharAt(sb.length()-1);
-        sb.append("&sensor=false&mode=walking&units=metric");
+        return Response.ok().build();
+    }
+
+    private DistanceMatrixResponse runQuery(String s) {
         try {
-            // request url
-            URL url = new URL(sb.toString());
-            try(InputStream is = url.openStream()){
+            URL url = new URL(s);
+            try (InputStream is = url.openStream()) {
                 // convert back to DistanceMatrixResponse
                 ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY);
                 mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 DistanceMatrixResponse response = mapper.readValue(is, DistanceMatrixResponse.class);
-                if(response.getStatus().equals("OK")){
-                    List<Row> rows = response.getRows();
-                    Row row = rows.get(0);
-                    List<Element> elements = row.getElements();
-                    List<LatLng> destinations = dmr.getDestinations();
-                    for (int i = 0; i < elements.size(); i++) {
-                        LatLng latLng = destinations.get(i);
-                        // save address in db
-                        Element element = elements.get(i);
-                        saveDistance(leaderLat, leaderLng, latLng.getJb(), latLng.getKb(), element.getDistance().getValue());
-                    }
-                }else{
-        // note only request 10 at a time
-        // check status to see if delay required
-        // add address to db
-                    logger.severe("Received bad response " + response.getStatus());
-                    return Response.serverError().build();
-                }
+                return response;
             }
         } catch (IOException ex) {
             logger.log(Level.SEVERE, "Bad URL for distance matrix", ex);
+            return null;
         }
-        return Response.ok().build();
     }
 
     @GET
     @Path("assignmembers")
     @Produces(MediaType.TEXT_HTML)
-    public Response computeMembers(){
+    public Response computeMembers() {
         // query distance table
         // select each member and order distance by closest leader
         // need to load leaders
@@ -166,12 +204,12 @@ public class DistanceProxyService {
         List<Double> toLngs = new ArrayList<>();
         for (DistrictJpa districtJpa : districtList) {
             Member leader = districtJpa.getLeader();
-            if(leader != null){
+            if (leader != null) {
                 toLats.add(leader.getLat());
                 toLngs.add(leader.getLng());
             }
         }
-        StringBuilder sb = new StringBuilder("<html><body><table><th><td>From</td><td>Address</td><td>To</td><td>Distance</td></th>");
+        StringBuilder sb = new StringBuilder("<html><body><table><tr><th>From</th><th>Address</th><th>To</th><th>Distance</th></tr>");
         for (MemberJpa memberJpa : memberList) {
             TypedQuery<DistanceJpa> distQuery = em.createNamedQuery("Distance.byClosest", DistanceJpa.class);
             distQuery.setParameter("memberLat", memberJpa.getLat());
@@ -190,7 +228,7 @@ public class DistanceProxyService {
                 sb.append("</td><td>").append(distanceJpa.getDistance());
                 sb.append("</td></tr>");
             }
-            if(list.size() > 0){
+            if (list.size() > 0) {
                 // assign member to first district found
                 DistanceJpa dist = list.get(0);
                 memberJpa.setDistrict(getDistrictId(dist, districtList));
@@ -220,10 +258,10 @@ public class DistanceProxyService {
         String name = null;
         for (DistrictJpa d : list) {
             Member leader = d.getLeader();
-            if(leader == null){
+            if (leader == null) {
                 continue;
             }
-            if(leader.getLat() == distanceJpa.getLeaderLat() && leader.getLng() == distanceJpa.getLeaderLng()){
+            if (leader.getLat() == distanceJpa.getLeaderLat() && leader.getLng() == distanceJpa.getLeaderLng()) {
                 name = d.getLeader().getHousehold();
                 break;
             }
@@ -235,10 +273,10 @@ public class DistanceProxyService {
         int id = 0;
         for (DistrictJpa d : list) {
             Member leader = d.getLeader();
-            if(leader == null){
+            if (leader == null) {
                 continue;
             }
-            if(leader.getLat() == distanceJpa.getLeaderLat() && leader.getLng() == distanceJpa.getLeaderLng()){
+            if (leader.getLat() == distanceJpa.getLeaderLat() && leader.getLng() == distanceJpa.getLeaderLng()) {
                 id = d.getId();
                 break;
             }
