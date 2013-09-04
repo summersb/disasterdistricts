@@ -20,6 +20,8 @@ import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 /**
@@ -28,6 +30,10 @@ import javax.persistence.Table;
  */
 @Entity(name="Member")
 @Table(name="Member")
+@NamedQueries({
+    @NamedQuery(name = "Member.all", query = "select m from Member m"),
+    @NamedQuery(name = "Member.byHousehold", query = "select m from Member m where m.household=:household")
+})
 public class MemberJpa implements Serializable, Member {
 
     public MemberJpa(){}
@@ -47,7 +53,7 @@ public class MemberJpa implements Serializable, Member {
 
     @Override
     public String toString() {
-        return "Member{" + "household=" + getHousehold() + ", address=" + getAddress() + ", city=" + getCity() + ", zip=" + getZip() + ", email=" + getEmail() + ", lat=" + getLat() + ", lng=" + getLng() + ", phone=" + getPhone() + ", district=" + getDistrict() + '}';
+        return "Member{" + "household=" + getHousehold() + ", address=" + getAddress() + ", city=" + getCity() + ", zip=" + getZip() + ", email=" + getEmail() + ", lat=" + getLat() + ", lng=" + getLng() + ", phone=" + getPhone() + ", district=" + getDistrict() + ", auto=" + isAuto() + "}";
     }
 
     @Id
@@ -61,8 +67,8 @@ public class MemberJpa implements Serializable, Member {
     private double lat;
     private double lng;
     private String phone;
-    private int district;
-    private boolean auto;
+    private int district = 0;// 0 is unassigned
+    private boolean auto = true;
 
     @Override
     public int hashCode() {

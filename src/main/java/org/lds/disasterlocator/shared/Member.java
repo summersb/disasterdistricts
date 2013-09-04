@@ -112,7 +112,12 @@ public interface Member {
      * @param zip the zip to set
      */
     void setZip(String zip);
-    
+
+    /**
+     * If this value is true then this Member should be assigned
+     * a district based on their proximity to a district leader
+     * @return
+     */
     boolean isAuto();
     void setAuto(boolean auto);
 

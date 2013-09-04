@@ -70,6 +70,11 @@ public class DistrictResource {
         em.getTransaction().begin();
         Query query = em.createNamedQuery("District.deleteByLeader").setParameter("leader", leader);
         query.executeUpdate();
+        MemberJpa member = em.find(MemberJpa.class, leader);
+        if(member != null){
+            member.setDistrict(0);
+        }
+        em.persist(member);
         em.getTransaction().commit();
         em.close();
         return Response.ok().build();
@@ -82,7 +87,7 @@ public class DistrictResource {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
         TypedQuery<DistrictJpa> find = em.createQuery("select d from District d", DistrictJpa.class);
-        int id = find.getResultList().size();
+        int id = find.getResultList().size()+1;
         MemberJpa leader = em.find(MemberJpa.class, leaderHousehold);
         if(leader.getDistrict() != 0){
             id = leader.getDistrict();

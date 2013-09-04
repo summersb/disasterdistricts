@@ -21,11 +21,13 @@ import com.google.web.bindery.autobean.vm.AutoBeanFactorySource;
 import java.util.List;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.ws.rs.core.Response;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.lds.disasterlocator.server.rest.jpa.DistrictJpa;
+import org.lds.disasterlocator.server.rest.jpa.MemberJpa;
 import org.lds.disasterlocator.shared.Member;
 import org.lds.disasterlocator.shared.MyAutoBeanFactory;
 
@@ -60,13 +62,21 @@ public class DistrictResourceTest {
     public void tearDown(){
         List<DistrictJpa> list = service.getDistrict();
         for (DistrictJpa districtJpa : list) {
-            service.deleteDistrict(districtJpa.getLeader().getHousehold());
+            Member leader = districtJpa.getLeader();
+                service.deleteDistrict(leader.getHousehold());
         }
+        List<MemberJpa> wardList = memberResource.getWardList();
+        for (MemberJpa memberJpa : wardList) {
+            memberResource.deleteMember(memberJpa.getHousehold());
+        }
+
     }
 
     @Test
     public void testGetDistrict() {
-        service.createNewDistrict("bob");
+        DistrictJpa newDistrict = service.createNewDistrict("bob");
+        MemberJpa member = (MemberJpa) memberResource.getMember("bob").getEntity();
+        assertEquals(newDistrict.getId(), member.getDistrict());
         List<DistrictJpa> district = service.getDistrict();
         assertEquals(1, district.size());
         assertEquals("bob", district.get(0).getLeader().getHousehold());
@@ -82,8 +92,15 @@ public class DistrictResourceTest {
     }
 
     @Test
-    public void testGetWardListAsCsv() {
-
+    public void testDeleteDistrict() {
+        DistrictJpa newDistrict = service.createNewDistrict("bob");
+        service.deleteDistrict("bob");
+        MemberJpa member = (MemberJpa) memberResource.getMember("bob").getEntity();
+        assertEquals(0, member.getDistrict());
+        List<DistrictJpa> district = service.getDistrict();
+        assertEquals(0, district.size());
+        List<MemberJpa> wardList = memberResource.getWardList();
+        assertEquals(2, wardList.size());
     }
 
     @Test

@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lds.disasterlocator.client.ClientFactory;
-import org.lds.disasterlocator.client.load.LoadViewImpl;
+import org.lds.disasterlocator.client.map.ComputeDistrictMembers.CallBack;
 import org.lds.disasterlocator.shared.District;
 import org.lds.disasterlocator.shared.DistrictList;
 import org.lds.disasterlocator.shared.Member;
@@ -49,6 +49,8 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
     private final ClientFactory clientFactory;
     private final MapView view;
     private List<District> districtList;
+    private List<Member> members;
+    private static final Logger logger = Logger.getLogger(MapActivity.class.getName());
 
     public MapActivity(ClientFactory factory) {
         clientFactory = factory;
@@ -92,6 +94,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
                     AutoBean<MemberList> memberListAB = AutoBeanCodex.decode(autoBeanFactory, MemberList.class, "{\"members\":" + json + "}");
                     MemberList memberList = memberListAB.as();
                     view.plotHouses(memberList.getMembers());
+                    members = memberList.getMembers();
                 }
 
                 @Override
@@ -100,7 +103,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
                 }
             });
         } catch (RequestException ex) {
-            Logger.getLogger(MapViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
         }
     }
 
@@ -125,7 +128,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
                 }
             });
         } catch (RequestException ex) {
-            Logger.getLogger(MapViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
         }
     }
 
@@ -158,10 +161,11 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
                 }
             });
         } catch (RequestException ex) {
-            Logger.getLogger(MapViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
         }
     }
 
+    @Override
     public void setAuto(Member member) {
         AutoBeanFactory factory = getAutoBeanFactory();
         AutoBean<Member> memberAB = factory.create(Member.class, member);
@@ -182,11 +186,25 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
 
                 @Override
                 public void onError(Request request, Throwable exception) {
-                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                    Window.alert("Error occured " + exception.getLocalizedMessage());
                 }
             });
         } catch (RequestException ex) {
-            Logger.getLogger(MapViewImpl.class.getName()).log(Level.SEVERE, "Failed to persist member" + member.getHousehold() + ":" + member.getAddress(), ex);
+            logger.log(Level.SEVERE, "Failed to persist member" + member.getHousehold() + ":" + member.getAddress(), ex);
         }
+    }
+
+    @Override
+    public void computeDistrictMembers() {
+        ComputeDistrictMembers computeDistrictMembers = new ComputeDistrictMembers(clientFactory, new CallBack() {
+
+            @Override
+            public void complete() {
+                // TODO
+                // update map view, remove all markers and re-add
+                loadMemberData();
+            }
+        });
+        computeDistrictMembers.compute(members);
     }
 }

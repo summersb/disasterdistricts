@@ -59,22 +59,53 @@ public class ComputeDistrictMembers {
     private final ClientFactory clientFactory;
     private List<Member> memberList;
     private static final Logger logger = Logger.getLogger(ComputeDistrictMembers.class.getName());
-    private final MapWidget map;
+    private final CallBack callback;
 
-    public ComputeDistrictMembers(ClientFactory factory, MapWidget map) {
+    public ComputeDistrictMembers(ClientFactory factory, CallBack callback) {
         this.clientFactory = factory;
-        this.map = map;
+        this.callback = callback;
     }
 
     public void compute(List<Member> memberList) {
         this.memberList = memberList;
         // get district leaders
         loadDistrictLeaders();
-
     }
 
+    /**
+     * After loading district list is complete
+     * this method gets called.
+     * This will compute the distance of members within 1000 meters of
+     * each leader
+     * @param list
+     */
     private void assignToDistrict(DistrictList list){
         // get members within 1,000 meters
+        DistanceCallBackHandler distanceHandler = new DistanceCallBackHandler(new CallBack() {
+
+            @Override
+            public void complete() {
+                // now compute which members belong to which district by distance
+                RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, MyConstants.REST_URL + "distance/assignmembers");
+                rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
+                try {
+                    rb.sendRequest("", new RequestCallback() {
+
+                        @Override
+                        public void onResponseReceived(Request request, Response response) {
+                            callback.complete();
+                        }
+
+                        @Override
+                        public void onError(Request request, Throwable exception) {
+                            Window.alert("Failed to compute district members");
+                        }
+                    });
+                } catch (RequestException ex) {
+                    logger.log(Level.SEVERE, null, ex);
+                }
+            }
+        });
         for (District district : list.getDistricts()) {
             Member leader = district.getLeader();
             double lat = leader.getLat();
@@ -91,8 +122,10 @@ public class ComputeDistrictMembers {
                 LatLng memberlatlng = LatLng.newInstance(memberlat, memberlng);
                 double distance = SphericalUtils.computeDistanceBetween(leaderLatLng, memberlatlng);
                 if(distance < 1000){
-                    if(!member.getHousehold().equals(leader.getHousehold())){
-                        memberArray.push(memberlatlng);
+                    if (member.isAuto()) {
+                        if (!member.getHousehold().equals(leader.getHousehold())) {
+                            memberArray.push(memberlatlng);
+                        }
                     }
                 }
             }
@@ -104,25 +137,45 @@ public class ComputeDistrictMembers {
             String json = new JSONObject(dmr).toString();
             logger.info(json);
             try {
-                rb.sendRequest(json, new RequestCallback() {
-
-                    @Override
-                    public void onResponseReceived(Request request, Response response) {
-                        // completed call
-                        // TODO
-                        // update map view, remove all markers and re-add
-                        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-                    }
-
-                    @Override
-                    public void onError(Request request, Throwable exception) {
-                        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-                    }
-                });
+                distanceHandler.addCall();
+                rb.sendRequest(json, distanceHandler);
             } catch (RequestException ex) {
                 Logger.getLogger(ComputeDistrictMembers.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+
+    private class DistanceCallBackHandler implements RequestCallback {
+
+        private int calls;
+        private final CallBack callback;
+
+        public DistanceCallBackHandler(CallBack callback){
+            this.callback = callback;
+        }
+
+        public void addCall(){
+            calls++;
+        }
+
+        @Override
+        public void onResponseReceived(Request request, Response response) {
+            calls--;
+            if(calls == 0){
+                callback.complete();
+            }
+        }
+
+        @Override
+        public void onError(Request request, Throwable exception) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+    }
+
+    public interface CallBack {
+
+        void complete();
     }
 
     private void loadDistrictLeaders(){

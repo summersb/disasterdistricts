@@ -29,7 +29,10 @@ import javax.persistence.NamedQuery;
  */
 @Entity(name="Distance")
 @NamedQueries({
-    @NamedQuery(name = "Distance.find", query = "select d from Distance d where d.fromLat=:fromLat and d.fromLng=:fromLng and d.toLat=:toLat and d.toLng=:toLng")
+    @NamedQuery(name = "Distance.find", query = "select d from Distance d where d.leaderLat=:leaderLat and d.leaderLng=:leaderLng and d.memberLat=:memberLat and d.memberLng=:memberLng"),
+    @NamedQuery(name = "Distance.byClosest", query = "select d from Distance d where"
+        +   " (d.memberLat=:memberLat and d.memberLng=:memberLng and d.leaderLat in (:leaderLatList) and d.leaderLng in (:leaderLngList)) "
+        + " order by d.distance asc")
 })
 public class DistanceJpa implements Serializable {
 
@@ -37,10 +40,10 @@ public class DistanceJpa implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-    private double fromLat;
-    private double fromLng;
-    private double toLat;
-    private double toLng;
+    private double leaderLat;
+    private double leaderLng;
+    private double memberLat;
+    private double memberLng;
     private int distance;
 
     public Long getId() {
@@ -79,57 +82,57 @@ public class DistanceJpa implements Serializable {
     /**
      * @return the from_lat
      */
-    public double getFromLat() {
-        return fromLat;
+    public double getLeaderLat() {
+        return leaderLat;
     }
 
     /**
      * @param from_lat the from_lat to set
      */
-    public void setFromLat(double from_lat) {
-        this.fromLat = from_lat;
+    public void setLeaderLat(double from_lat) {
+        this.leaderLat = from_lat;
     }
 
     /**
      * @return the form_lng
      */
-    public double getFormLng() {
-        return fromLng;
+    public double getLeaderLng() {
+        return leaderLng;
     }
 
     /**
      * @param form_lng the form_lng to set
      */
-    public void setFromLng(double form_lng) {
-        this.fromLng = form_lng;
+    public void setLeaderLng(double form_lng) {
+        this.leaderLng = form_lng;
     }
 
     /**
      * @return the to_lat
      */
-    public double getToLat() {
-        return toLat;
+    public double getMemberLat() {
+        return memberLat;
     }
 
     /**
      * @param to_lat the to_lat to set
      */
-    public void setToLat(double to_lat) {
-        this.toLat = to_lat;
+    public void setMemberLat(double to_lat) {
+        this.memberLat = to_lat;
     }
 
     /**
      * @return the to_lng
      */
-    public double getToLng() {
-        return toLng;
+    public double getMemberLng() {
+        return memberLng;
     }
 
     /**
      * @param to_lng the to_lng to set
      */
-    public void setToLng(double to_lng) {
-        this.toLng = to_lng;
+    public void setMemberLng(double to_lng) {
+        this.memberLng = to_lng;
     }
 
     /**

@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
@@ -41,7 +42,8 @@ import org.lds.disasterlocator.shared.Member;
 @Entity(name="District")
 @Table(name = "District")
 @NamedQueries({
-    @NamedQuery(name = "District.deleteByLeader", query = "delete from District d where d.leader.household=:leader")
+    @NamedQuery(name = "District.deleteByLeader", query = "delete from District d where d.leader.household=:leader"),
+    @NamedQuery(name = "District.all", query = "select d from District d")
 })
 public class DistrictJpa implements Serializable, District {
 
@@ -74,9 +76,12 @@ public class DistrictJpa implements Serializable, District {
         }
         return true;
     }
-    @OneToOne(cascade= CascadeType.ALL, targetEntity = MemberJpa.class)
+    // deleting a district should not delete the member
+    @OneToOne(cascade= {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, targetEntity = MemberJpa.class)
+    @Column(name="leader")
     private Member leader;
-    @OneToOne(cascade= CascadeType.ALL, targetEntity = MemberJpa.class)
+    @OneToOne(cascade= {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, targetEntity = MemberJpa.class)
+    @Column(name="assistant")
     private Member assistant;
 
     /**
