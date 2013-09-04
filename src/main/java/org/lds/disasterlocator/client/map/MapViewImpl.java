@@ -268,6 +268,10 @@ public class MapViewImpl extends Composite implements MapView {
             MarkerOptions options = MarkerOptions.newInstance();
             options.setPosition(center);
             options.setTitle(rollOver(member));
+            if(member.getDistrict() != 0){
+                // we can set district colors here also
+                options.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + member.getDistrict() + "|FF0000|000000");
+            }
 
             final Marker marker = Marker.newInstance(options);
             marker.setMap(mapWidget);
