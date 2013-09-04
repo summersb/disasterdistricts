@@ -93,6 +93,13 @@ public class DistanceProxyService {
         return Response.ok().entity(new Integer(distance.getDistance())).build();
     }
 
+    /**
+     * Add lat/long to distance table for members to leaders
+     *
+     * @param DistanceMatrixRequest must contain only one origin and that must be
+     * the leaders lat/lng.  Can contain any number of destinations.
+     * @return
+     */
     @POST
     public Response getDistanceMatrix(DistrictMatrixRequest dmr) {
         // add origin
@@ -124,45 +131,44 @@ public class DistanceProxyService {
                     sb.append("&sensor=false&mode=walking&units=metric");
                     // request url
                     DistanceMatrixResponse response = runQuery(sb.toString());
-
-                    if (response.getStatus().equals("OK")) {
-                        logger.log(Level.INFO, "Successful query {0}", sb.toString());
-                        List<Row> rows = response.getRows();
-                        Row row = rows.get(0);
-                        List<Element> elements = row.getElements();
-                        List<LatLng> destinations = dmr.getDestinations();
-                        for (int j = 0; j < elements.size(); j++) {
-                            LatLng latLng = destinations.get(j);
-                            // save address in db
-                            Element element = elements.get(j);
-                            saveDistance(leaderLat, leaderLng, latLng.getJb(), latLng.getKb(), element.getDistance().getValue());
-                        }
-                    } else if ("OVER_QUERY_LIMIT".equals(response.getStatus())) {
-                        // need to deal with pause and run again
-                        logger.info(("Over query limit, sleeping 10 seconds"));
-                        try {
-                            Thread.sleep(10000);
-                            while ("OVER_QUERY_LIMIT".equals(response.getStatus())) {
-                                response = runQuery(sb.toString());
-                                logger.log(Level.INFO, "Received {0}", response.getStatus());
+                    switch (response.getStatus()) {
+                        case "OK":
+                            logger.log(Level.INFO, "Successful query {0}", sb.toString());
+                            List<Row> rows = response.getRows();
+                            Row row = rows.get(0);
+                            List<Element> elements = row.getElements();
+                            List<LatLng> destinations = dmr.getDestinations();
+                            for (int j = 0; j < elements.size(); j++) {
+                                LatLng latLng = destinations.get(j);
+                                // save address in db
+                                Element element = elements.get(j);
+                                saveDistance(leaderLat, leaderLng, latLng.getJb(), latLng.getKb(), element.getDistance().getValue());
                             }
-                            if(!response.getStatus().equals("OK")){
-                                logger.severe("Received response " + response.getStatus() + " for query "+ sb.toString());
+                            break;
+                        case "OVER_QUERY_LIMIT":
+                            // need to deal with pause and run again
+                            logger.info(("Over query limit, sleeping 10 seconds"));
+                            try {
+                                while ("OVER_QUERY_LIMIT".equals(response.getStatus())) {
+                                    Thread.sleep(10000);
+                                    response = runQuery(sb.toString());
+                                    logger.log(Level.INFO, "Received {0}", response.getStatus());
+                                }
+                                if(!response.getStatus().equals("OK")){
+                                    logger.severe("Received response " + response.getStatus() + " for query "+ sb.toString());
+                                }
+                            } catch (InterruptedException ex) {
+                                logger.log(Level.SEVERE, null, ex);
                             }
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(DistanceProxyService.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-                    } else {
-                        // note only request 10 at a time
-                        // check status to see if delay required
-                        // add address to db
-                        String[] args = {response.getStatus(), sb.toString()};
-                        logger.log(Level.SEVERE, "Received bad response {0} for query {1}", args);
-                        return Response.serverError().build();
+                            break;
+                        default:
+                            String[] args = {response.getStatus(), sb.toString()};
+                            logger.log(Level.SEVERE, "Received bad response {0} for query {1}", args);
+                            return Response.serverError().build();
                     }
+                    // Setup string builder for next request set
                     sb = new StringBuilder("http://maps.googleapis.com/maps/api/distancematrix/json?");
                     sb.append("origins=").append(leaderLat).append(",").append(leaderLng);
-                    // add destinations
                     sb.append("&destinations=");
                 }
             }
