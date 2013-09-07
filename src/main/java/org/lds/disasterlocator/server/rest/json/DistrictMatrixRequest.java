@@ -29,6 +29,10 @@ public class DistrictMatrixRequest {
     private String travelMode;
     private int unitSystem;
 
+    public static final int METRIC = 0;
+    public static final int IMPERIAL = 1;
+    public static final String WALKING = "WALKING";
+    
     /**
      * @return the origin
      */

@@ -22,20 +22,9 @@ import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.json.client.JSONObject;
-import com.google.gwt.maps.client.MapWidget;
 import com.google.gwt.maps.client.base.LatLng;
-import com.google.gwt.maps.client.base.LatLngBounds;
 import com.google.gwt.maps.client.geometrylib.SphericalUtils;
-import com.google.gwt.maps.client.overlays.Circle;
-import com.google.gwt.maps.client.overlays.CircleOptions;
 import com.google.gwt.maps.client.services.DistanceMatrixRequest;
-import com.google.gwt.maps.client.services.DistanceMatrixRequestHandler;
-import com.google.gwt.maps.client.services.DistanceMatrixResponse;
-import com.google.gwt.maps.client.services.DistanceMatrixResponseElement;
-import com.google.gwt.maps.client.services.DistanceMatrixResponseRow;
-import com.google.gwt.maps.client.services.DistanceMatrixService;
-import com.google.gwt.maps.client.services.DistanceMatrixStatus;
-import com.google.gwt.maps.client.services.Geocoder;
 import com.google.gwt.maps.client.services.TravelMode;
 import com.google.gwt.maps.client.services.UnitSystem;
 import com.google.gwt.user.client.Window;
@@ -75,7 +64,7 @@ public class ComputeDistrictMembers {
     /**
      * After loading district list is complete
      * this method gets called.
-     * This will compute the distance of members within 1000 meters of
+     * This will compute the distance of members within 2000 meters of
      * each leader
      * @param list
      */
@@ -121,7 +110,7 @@ public class ComputeDistrictMembers {
                 double memberlng = member.getLng();
                 LatLng memberlatlng = LatLng.newInstance(memberlat, memberlng);
                 double distance = SphericalUtils.computeDistanceBetween(leaderLatLng, memberlatlng);
-                if(distance < 1000){
+                if(distance < 2000){
                     if (member.isAuto()) {
                         if (!member.getHousehold().equals(leader.getHousehold())) {
                             memberArray.push(memberlatlng);

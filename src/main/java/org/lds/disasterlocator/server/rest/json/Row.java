@@ -15,6 +15,7 @@
  */
 package org.lds.disasterlocator.server.rest.json;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,6 +29,9 @@ public class Row {
      * @return the elements
      */
     public List<Element> getElements() {
+        if(elements == null){
+            elements = new ArrayList<>();
+        }
         return elements;
     }
 
@@ -37,4 +41,17 @@ public class Row {
     public void setElements(List<Element> elements) {
         this.elements = elements;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"elements\":[");
+        for (Element element : elements) {
+            sb.append(element.toString());
+        }
+        sb.append("] }\n");
+        return sb.toString();
+    }
+
+
 }

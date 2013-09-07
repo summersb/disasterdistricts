@@ -22,14 +22,21 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 /**
  *
  * @author Bert Summers
  */
 @Entity(name="Distance")
+@Table(name="Distance", uniqueConstraints={
+   @UniqueConstraint(columnNames={"leaderLat", "leaderLng", "memberLat", "memberLng"})
+})
 @NamedQueries({
-    @NamedQuery(name = "Distance.find", query = "select d from Distance d where d.leaderLat=:leaderLat and d.leaderLng=:leaderLng and d.memberLat=:memberLat and d.memberLng=:memberLng"),
+    @NamedQuery(name = "Distance.find", query = "select d from Distance d "
+        + "where d.leaderLat=:leaderLat and d.leaderLng=:leaderLng "
+        + "and d.memberLat=:memberLat and d.memberLng=:memberLng"),
     @NamedQuery(name = "Distance.byClosest", query = "select d from Distance d where"
         +   " (d.memberLat=:memberLat and d.memberLng=:memberLng and d.leaderLat in (:leaderLatList) and d.leaderLng in (:leaderLngList)) "
         + " order by d.distance asc")
@@ -55,28 +62,8 @@ public class DistanceJpa implements Serializable {
     }
 
     @Override
-    public int hashCode() {
-        int hash = 0;
-        hash += (getId() != null ? getId().hashCode() : 0);
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        // TODO: Warning - this method won't work in the case the id fields are not set
-        if (!(object instanceof DistanceJpa)) {
-            return false;
-        }
-        DistanceJpa other = (DistanceJpa) object;
-        if ((this.getId() == null && other.getId() != null) || (this.getId() != null && !this.id.equals(other.id))) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
     public String toString() {
-        return "org.lds.disasterlocator.server.rest.jpa.Distance[ id=" + getId() + " ]";
+        return "DistanceJpa{" + "id=" + id + ", leaderLat=" + leaderLat + ", leaderLng=" + leaderLng + ", memberLat=" + memberLat + ", memberLng=" + memberLng + ", distance=" + distance + '}';
     }
 
     /**

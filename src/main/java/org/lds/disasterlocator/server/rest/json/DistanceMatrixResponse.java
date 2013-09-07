@@ -15,6 +15,7 @@
  */
 package org.lds.disasterlocator.server.rest.json;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -33,6 +34,9 @@ public class DistanceMatrixResponse {
      * @return the destination_addresses
      */
     public List<String> getDestination_addresses() {
+        if(destination_addresses == null){
+            destination_addresses = new ArrayList<>();
+        }
         return destination_addresses;
     }
 
@@ -47,6 +51,9 @@ public class DistanceMatrixResponse {
      * @return the origin_addresses
      */
     public List<String> getOrigin_addresses() {
+        if(origin_addresses == null){
+            origin_addresses = new ArrayList<>();
+        }
         return origin_addresses;
     }
 
@@ -61,6 +68,9 @@ public class DistanceMatrixResponse {
      * @return the rows
      */
     public List<Row> getRows() {
+        if(rows == null){
+            rows = new ArrayList<>();
+        }
         return rows;
     }
 
@@ -87,6 +97,24 @@ public class DistanceMatrixResponse {
 
     @Override
     public String toString() {
-        return "DistanceMatrixResponse{" + "destination_addresses=" + destination_addresses + ", origin_addresses=" + origin_addresses + ", rows=" + rows + ", status=" + status + '}';
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\n\"origin_addresses\":[");
+        for (String string : origin_addresses) {
+            sb.append("\"").append(string).append("\",");
+        }
+        sb.deleteCharAt(sb.length()-1);
+        sb.append("],\n\"destination_addresses\":[");
+        for (String string : destination_addresses) {
+            sb.append("\"").append(string).append("\",");
+        }
+        sb.deleteCharAt(sb.length()-1);
+        sb.append("],\n\"rows\":[\n");
+        for (Row row : rows) {
+            sb.append(row.toString());
+            sb.append(",");
+        }
+        sb.deleteCharAt(sb.length()-1);
+        sb.append("],\"status\":\"OK\"}");
+        return sb.toString();
     }
 }

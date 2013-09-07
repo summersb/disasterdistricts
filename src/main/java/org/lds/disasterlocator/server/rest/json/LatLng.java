@@ -24,6 +24,14 @@ public class LatLng {
     private double jb;
     private double kb;
 
+    public LatLng(){
+    }
+
+    public LatLng(double lat, double lng){
+        jb = lat;
+        kb = lng;
+    }
+    
     /**
      * @return the Latitude
      */
