@@ -137,67 +137,65 @@ public class DistanceProxyService {
         sb.append("origins=").append(leaderLat).append(",").append(leaderLng);
         // add destinations
         sb.append("&destinations=");
-        int count = 1;
-        for (int i = 0; i < dmr.getDestinations().size() + 1; i++) {
-            if (count % 10 != 0 && i < dmr.getDestinations().size()) {
-                LatLng latLng = dmr.getDestinations().get(i);
-                double memberLat = latLng.getJb();
-                double memberLng = latLng.getKb();
-                // check if we already have destination
-                Response distance = getDistance(leaderLat, leaderLng, memberLat, memberLng);
-                if (distance.getStatus() == 404) {
-                    count++;
-                    sb.append(memberLat).append(",").append(memberLng);
-                    sb.append("|");
-                }
-            } else {
-                if (count > 1) {
-                    count = 1;
-                    // make request, then reset sb and start again
-                    // delete the trailing pipe character
-                    sb.deleteCharAt(sb.length() - 1);
-                    sb.append("&sensor=false&mode=walking&units=metric");
-                    // request url
-                    DistanceMatrixResponse response = runQuery(sb.toString());
-                    switch (response.getStatus()) {
-                        case "OK":
-                            logger.log(Level.INFO, "Successful query {0}", sb.toString());
-                            saveAddresses(response, leaderLat, leaderLng);
-                            break;
-                        case "OVER_QUERY_LIMIT":
-                            // need to deal with pause and run again
-                            logger.info(("Over query limit, sleeping 10 seconds"));
-                            try {
-                                int limitCount =0;
-                                while ("OVER_QUERY_LIMIT".equals(response.getStatus())) {
-                                    Thread.sleep(10000);
-                                    response = runQuery(sb.toString());
-                                    logger.log(Level.INFO, "Received {0}", response.getStatus());
-                                    limitCount++;
-                                    if(limitCount > 10){
-                                        throw new WebApplicationException("Google API limits exceed, try again tomorrow", Status.INTERNAL_SERVER_ERROR);
-                                    }
+        int count = 0;
+        for (int i = 0; i < dmr.getDestinations().size(); i++) {
+            LatLng latLng = dmr.getDestinations().get(i);
+            double memberLat = latLng.getJb();
+            double memberLng = latLng.getKb();
+            // check if we already have destination
+            Response distance = getDistance(leaderLat, leaderLng, memberLat, memberLng);
+            if (distance.getStatus() == 404) {
+                count++;
+                sb.append(memberLat).append(",").append(memberLng);
+                sb.append("|");
+            }
+            // request distances in chunks of 10 address
+            if ((count > 0 && count % 10 == 0) || i == dmr.getDestinations().size()-1) {
+                count = 0;
+                // make request, then reset sb and start again
+                // delete the trailing pipe character
+                sb.deleteCharAt(sb.length() - 1);
+                sb.append("&sensor=false&mode=walking&units=metric");
+                // request url
+                DistanceMatrixResponse response = runQuery(sb.toString());
+                switch (response.getStatus()) {
+                    case "OK":
+                        logger.log(Level.INFO, "Successful query {0}", sb.toString());
+                        saveAddresses(response, leaderLat, leaderLng);
+                        break;
+                    case "OVER_QUERY_LIMIT":
+                        // need to deal with pause and run again
+                        logger.info(("Over query limit, sleeping 10 seconds"));
+                        try {
+                            int limitCount =0;
+                            while ("OVER_QUERY_LIMIT".equals(response.getStatus())) {
+                                Thread.sleep(10000);
+                                response = runQuery(sb.toString());
+                                logger.log(Level.INFO, "Received {0}", response.getStatus());
+                                limitCount++;
+                                if(limitCount > 10){
+                                    throw new WebApplicationException("Google API limits exceed, try again tomorrow", Status.INTERNAL_SERVER_ERROR);
                                 }
-                                if ("OK".equals(response.getStatus())) {
-                                    logger.log(Level.INFO, "Successful query {0}", sb.toString());
-                                    saveAddresses(response, leaderLat, leaderLng);
-                                } else {
-                                    logger.log(Level.SEVERE, "Received response {0} for query {1}", new Object[]{response.getStatus(), sb.toString()});
-                                }
-                            } catch (InterruptedException ex) {
-                                logger.log(Level.SEVERE, null, ex);
                             }
-                            break;
-                        default:
-                            String[] args = {response.getStatus(), sb.toString()};
-                            logger.log(Level.SEVERE, "Received bad response {0} for query {1}", args);
-                            return Response.serverError().build();
-                    }
-                    // Setup string builder for next request set
-                    sb = new StringBuilder("http://maps.googleapis.com/maps/api/distancematrix/json?");
-                    sb.append("origins=").append(leaderLat).append(",").append(leaderLng);
-                    sb.append("&destinations=");
+                            if ("OK".equals(response.getStatus())) {
+                                logger.log(Level.INFO, "Successful query {0}", sb.toString());
+                                saveAddresses(response, leaderLat, leaderLng);
+                            } else {
+                                logger.log(Level.SEVERE, "Received response {0} for query {1}", new Object[]{response.getStatus(), sb.toString()});
+                            }
+                        } catch (InterruptedException ex) {
+                            logger.log(Level.SEVERE, null, ex);
+                        }
+                        break;
+                    default:
+                        String[] args = {response.getStatus(), sb.toString()};
+                        logger.log(Level.SEVERE, "Received bad response {0} for query {1}", args);
+                        return Response.serverError().build();
                 }
+                // Setup string builder for next request set
+                sb = new StringBuilder("http://maps.googleapis.com/maps/api/distancematrix/json?");
+                sb.append("origins=").append(leaderLat).append(",").append(leaderLng);
+                sb.append("&destinations=");
             }
         }
         return Response.ok().build();
@@ -339,7 +337,7 @@ public class DistanceProxyService {
                 destinations.add(memberLatLng);
             }
             // get distances
-            logger.log(Level.WARNING, "Getting distance for {0} MemberCount: {1}", new Object[]{leader.getHousehold(), destinations.size()});
+            logger.log(Level.INFO, "Getting distance for {0} MemberCount: {1}", new Object[]{leader.getHousehold(), destinations.size()});
             getDistanceMatrix(dmr);
         }
     }
