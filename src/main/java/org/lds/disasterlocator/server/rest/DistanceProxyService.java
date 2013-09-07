@@ -20,7 +20,9 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.EntityManager;
@@ -138,20 +140,25 @@ public class DistanceProxyService {
         // add destinations
         sb.append("&destinations=");
         int count = 0;
+        Set<LatLng> currentLatLng = new HashSet<>();
         for (int i = 0; i < dmr.getDestinations().size(); i++) {
             LatLng latLng = dmr.getDestinations().get(i);
             double memberLat = latLng.getJb();
             double memberLng = latLng.getKb();
-            // check if we already have destination
-            Response distance = getDistance(leaderLat, leaderLng, memberLat, memberLng);
-            if (distance.getStatus() == 404) {
-                count++;
-                sb.append(memberLat).append(",").append(memberLng);
-                sb.append("|");
+            if(!currentLatLng.contains(latLng)){
+                // check if we already have destination
+                Response distance = getDistance(leaderLat, leaderLng, memberLat, memberLng);
+                if (distance.getStatus() == 404) {
+                    count++;
+                    sb.append(memberLat).append(",").append(memberLng);
+                    sb.append("|");
+                    currentLatLng.add(latLng);
+                }
             }
             // request distances in chunks of 10 address
-            if ((count > 0 && count % 10 == 0) || i == dmr.getDestinations().size()-1) {
+            if ((count > 0 && count % 10 == 0) || (i == dmr.getDestinations().size()-1 && count > 0)) {
                 count = 0;
+                currentLatLng.clear();
                 // make request, then reset sb and start again
                 // delete the trailing pipe character
                 sb.deleteCharAt(sb.length() - 1);
