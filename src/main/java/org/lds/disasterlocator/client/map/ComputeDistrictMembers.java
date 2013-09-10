@@ -69,7 +69,7 @@ public class ComputeDistrictMembers {
      * @param list
      */
     private void assignToDistrict(DistrictList list){
-        // get members within 1,000 meters
+        // get members within 2,000 meters
         DistanceCallBackHandler distanceHandler = new DistanceCallBackHandler(new CallBack() {
 
             @Override

@@ -121,6 +121,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
                     AutoBean<DistrictList> districtListAB = AutoBeanCodex.decode(autoBeanFactory, DistrictList.class, "{\"districts\":" + json + "}");
                     DistrictList districtlist = districtListAB.as();
                     districtList = districtlist.getDistricts();
+                    view.setDistricts(districtlist.getDistricts());
                 }
 
                 @Override

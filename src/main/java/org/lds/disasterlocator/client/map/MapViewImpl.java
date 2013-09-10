@@ -52,8 +52,12 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.lds.disasterlocator.client.load.LoadPlace;
+import org.lds.disasterlocator.shared.District;
 import org.lds.disasterlocator.shared.Member;
 
 /**
@@ -63,16 +67,16 @@ import org.lds.disasterlocator.shared.Member;
 public class MapViewImpl extends Composite implements MapView {
 
     private static MapUiBinder uiBinder = GWT.create(MapUiBinder.class);
-    @UiField
-    HTMLPanel map;
-    @UiField
-    HTMLPanel topMenu;
-    @UiField
-    Button load;
-    @UiField
-    Button compute;
+    @UiField HTMLPanel map;
+    @UiField HTMLPanel topMenu;
+    @UiField Button load;
+    @UiField Button compute;
+    @UiField CheckBox districtCircle;
     private Activity activity;
     private List<Member> memberList;
+    private List<District> districtList;
+    private Map<String, Marker> markerSet = new HashMap<String, Marker>();
+    private static final String leaderColor = "L|00ff00|000000";
 
     public MapViewImpl() {
         initWidget(uiBinder.createAndBindUi(this));
@@ -167,6 +171,7 @@ public class MapViewImpl extends Composite implements MapView {
 
         // Hook up a handler to find out when it's clicked.
         checkbox.addClickHandler(new ClickHandler() {
+            @Override
             public void onClick(ClickEvent event) {
                 boolean checked = ((CheckBox) event.getSource()).getValue();
                 if (checked) {
@@ -197,6 +202,7 @@ public class MapViewImpl extends Composite implements MapView {
         TextBox tb = new TextBox();
 
         tb.addKeyPressHandler(new KeyPressHandler() {
+            @Override
             public void onKeyPress(KeyPressEvent event) {
                 if (event.getCharCode() == KeyCodes.KEY_ENTER) {
                     setDistrict();
@@ -261,6 +267,30 @@ public class MapViewImpl extends Composite implements MapView {
     }
 
     @Override
+    public void setDistricts(List<District> list){
+        districtList = list;
+        Set<String> memberHousehold = markerSet.keySet();
+        for (String household : memberHousehold) {
+            if(isLeader(household)){
+                Marker marker = markerSet.get(household);
+                marker.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + leaderColor);
+                marker.setZindex(1000);
+            }
+        }
+    }
+
+    private boolean isLeader(String household){
+        if(districtList != null){
+            for (District district : districtList) {
+                if(district.getLeader().getHousehold().equals(household)){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void plotHouses(List<Member> members) {
         memberList = members;
         for (final Member member : members) {
@@ -270,11 +300,17 @@ public class MapViewImpl extends Composite implements MapView {
             options.setTitle(rollOver(member));
             if(member.getDistrict() != 0){
                 // we can set district colors here also
-                options.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + member.getDistrict() + "|FF0000|000000");
+                String color = member.getDistrict() + "|FF0000|000000";
+                if(isLeader(member.getHousehold())){
+                    color = leaderColor;
+                    options.setZindex(1000);
+                }
+                options.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + color);
             }
 
             final Marker marker = Marker.newInstance(options);
             marker.setMap(mapWidget);
+            markerSet.put(member.getHousehold(), marker);
 
             marker.addClickHandler(new MarkerHandler(marker, member));
 

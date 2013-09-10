@@ -20,6 +20,7 @@ import com.google.gwt.user.client.ui.IsWidget;
 import com.google.web.bindery.autobean.shared.AutoBeanFactory;
 import java.util.List;
 import org.lds.disasterlocator.client.ClientFactory;
+import org.lds.disasterlocator.shared.District;
 import org.lds.disasterlocator.shared.Member;
 
 /**
@@ -31,6 +32,7 @@ public interface MapView extends IsWidget {
     void setActivity(Activity activity);
     void plotHouses(List<Member> members);
     void renderMap();
+    void setDistricts(List<District> districtlist);
 
     interface Activity {
 
