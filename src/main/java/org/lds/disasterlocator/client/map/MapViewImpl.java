@@ -34,6 +34,8 @@ import com.google.gwt.maps.client.events.click.ClickMapEvent;
 import com.google.gwt.maps.client.events.click.ClickMapHandler;
 import com.google.gwt.maps.client.events.resize.ResizeMapEvent;
 import com.google.gwt.maps.client.events.resize.ResizeMapHandler;
+import com.google.gwt.maps.client.overlays.Circle;
+import com.google.gwt.maps.client.overlays.CircleOptions;
 import com.google.gwt.maps.client.overlays.InfoWindow;
 import com.google.gwt.maps.client.overlays.InfoWindowOptions;
 import com.google.gwt.maps.client.overlays.Marker;
@@ -52,6 +54,7 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +80,7 @@ public class MapViewImpl extends Composite implements MapView {
     private List<District> districtList;
     private Map<String, Marker> markerSet = new HashMap<String, Marker>();
     private static final String leaderColor = "L|00ff00|000000";
+    private List<Circle> districtCircleList = new ArrayList<Circle>();
 
     public MapViewImpl() {
         initWidget(uiBinder.createAndBindUi(this));
@@ -325,6 +329,37 @@ public class MapViewImpl extends Composite implements MapView {
     @UiHandler("compute")
     public void computeMembers(ClickEvent event) {
         activity.computeDistrictMembers();
+    }
+
+    @UiHandler("districtCircle")
+    public void showCircles(ClickEvent event){
+        if(districtCircle.getValue()){
+            for (District district : districtList) {
+                Member leader = district.getLeader();
+                if(leader != null){
+                    CircleOptions circleOptions = CircleOptions.newInstance();
+                    LatLng latLng = LatLng.newInstance(leader.getLat(), leader.getLng());
+                    circleOptions.setCenter(latLng);
+                    circleOptions.setZindex(0);
+                    circleOptions.setFillColor("222222");
+                    circleOptions.setFillOpacity(.2);
+                    circleOptions.setRadius(1000);
+                    Circle circle = Circle.newInstance(circleOptions);
+                    circle.setMap(mapWidget);
+                    districtCircleList.add(circle);
+                }
+            }
+            // get checkbox status, if checked
+            // for each district get leader lat lng
+            // create circle
+            // add circle to list to erase later
+        }else{
+            // else remove circles
+            for (Circle circle : districtCircleList) {
+                circle.setMap(null);
+            }
+            districtCircleList.clear();
+        }
     }
 
     private native void createSpiderdfier()/*-{
