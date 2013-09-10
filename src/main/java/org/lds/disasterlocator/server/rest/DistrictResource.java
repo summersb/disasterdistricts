@@ -31,6 +31,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.lds.disasterlocator.server.rest.jpa.DistrictJpa;
 import org.lds.disasterlocator.server.rest.jpa.MemberJpa;
+import org.lds.disasterlocator.shared.Member;
 
 /**
  *
@@ -55,11 +56,9 @@ public class DistrictResource {
     @GET
     public List<DistrictJpa> getDistrict() {
         EntityManager em = emf.createEntityManager();
-        TypedQuery<DistrictJpa> q = em.createQuery("select d from District d", DistrictJpa.class);
+        TypedQuery<DistrictJpa> q = em.createNamedQuery("District.all", DistrictJpa.class);
         List<DistrictJpa> resultList = q.getResultList();
-        for (DistrictJpa district : resultList) {
-            em.detach(district);
-        }
+        em.close();
         return resultList;
     }
 
@@ -68,18 +67,33 @@ public class DistrictResource {
     public Response deleteDistrict(@PathParam("leader") String leader){
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
+        // get district first
+        TypedQuery<DistrictJpa> distQuery = em.createNamedQuery("District.byLeader", DistrictJpa.class).setParameter("leader", leader);
+        List<DistrictJpa> resultList = distQuery.getResultList();
+        for (DistrictJpa districtJpa : resultList) {
+            // reset leader and assistant district ids to 0
+            MemberJpa member = em.find(MemberJpa.class, leader);
+            if(member != null){
+                member.setDistrict(0);
+            }
+            em.persist(member);
+            Member assistant = districtJpa.getAssistant();
+            if(assistant != null){
+                MemberJpa assist = em.find(MemberJpa.class, assistant.getHousehold());
+                assist.setDistrict(0);
+                em.persist(assist);
+            }
+        }
         Query query = em.createNamedQuery("District.deleteByLeader").setParameter("leader", leader);
         query.executeUpdate();
-        MemberJpa member = em.find(MemberJpa.class, leader);
-        if(member != null){
-            member.setDistrict(0);
-        }
-        em.persist(member);
         em.getTransaction().commit();
         em.close();
         return Response.ok().build();
     }
 
+    // Maybe compute distances to all members here
+    // should spread the requests out over time
+    // maybe not hit a limit
     @POST
     @Path("{leader}")
     @Consumes(MediaType.WILDCARD)
@@ -109,7 +123,7 @@ public class DistrictResource {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
         TypedQuery<DistrictJpa> find = em.createQuery("select d from District d", DistrictJpa.class);
-        int id = find.getMaxResults();
+        int id = find.getResultList().size()+1;
         MemberJpa leader = em.find(MemberJpa.class, leaderHousehold);
         MemberJpa assistant = em.find(MemberJpa.class, assistantHousehold);
         DistrictJpa d = new DistrictJpa();
@@ -126,7 +140,7 @@ public class DistrictResource {
     }
 
     @POST
-    public Response storeDistrict(DistrictJpa district) {
+    public Response createDistrict(DistrictJpa district) {
         EntityManager em = emf.createEntityManager();
         DistrictJpa find = em.find(DistrictJpa.class, district.getId());
         if (find != null) {

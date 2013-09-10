@@ -25,7 +25,7 @@ public class Distance {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + "text=" + text + ", value=" + value + '}';
+        return "\"value\":" + value + ",\n\"text\":\"" + text + "\"\n";
     }
 
     /**

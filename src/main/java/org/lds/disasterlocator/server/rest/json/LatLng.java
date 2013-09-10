@@ -24,6 +24,45 @@ public class LatLng {
     private double jb;
     private double kb;
 
+    public LatLng(){
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 67 * hash + (int) (Double.doubleToLongBits(this.jb) ^ (Double.doubleToLongBits(this.jb) >>> 32));
+        hash = 67 * hash + (int) (Double.doubleToLongBits(this.kb) ^ (Double.doubleToLongBits(this.kb) >>> 32));
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final LatLng other = (LatLng) obj;
+        if (Double.doubleToLongBits(this.jb) != Double.doubleToLongBits(other.jb)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(this.kb) != Double.doubleToLongBits(other.kb)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "LatLng{" + "lat=" + jb + ", lng=" + kb + '}';
+    }
+
+    public LatLng(double lat, double lng){
+        jb = lat;
+        kb = lng;
+    }
+
     /**
      * @return the Latitude
      */

@@ -29,6 +29,7 @@
       <property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema(ForeignKeys=true)"/>
       <property name="openjpa.DetachState" value="fetch-groups(DetachedStateField=true)"/>
       <property name="jboss.as.jpa.providerModule" value="org.apache.openjpa"/>
+      <property name="openjpa.Log" value="log4j"/>
     </properties>
   </persistence-unit>
 </persistence>

@@ -89,18 +89,40 @@ public class DistrictResourceTest {
         assertEquals(1, district.size());
         assertEquals("bob", district.get(0).getLeader().getHousehold());
         assertEquals("fred", district.get(0).getAssistant().getHousehold());
+        MemberJpa member = (MemberJpa) memberResource.getMember("bob").getEntity();
+        assertEquals(1, member.getDistrict());
+        member = (MemberJpa) memberResource.getMember("fred").getEntity();
+        assertEquals(1, member.getDistrict());
     }
 
     @Test
     public void testDeleteDistrict() {
         DistrictJpa newDistrict = service.createNewDistrict("bob");
-        service.deleteDistrict("bob");
         MemberJpa member = (MemberJpa) memberResource.getMember("bob").getEntity();
+        assertEquals(1, member.getDistrict());
+        service.deleteDistrict("bob");
+        member = (MemberJpa) memberResource.getMember("bob").getEntity();
         assertEquals(0, member.getDistrict());
         List<DistrictJpa> district = service.getDistrict();
         assertEquals(0, district.size());
         List<MemberJpa> wardList = memberResource.getWardList();
         assertEquals(2, wardList.size());
+        // test delete with assistant
+        service.createNewDistrict("bob", "fred");
+        member = (MemberJpa) memberResource.getMember("bob").getEntity();
+        assertEquals(1, member.getDistrict());
+        member = (MemberJpa) memberResource.getMember("fred").getEntity();
+        assertEquals(1, member.getDistrict());
+        service.deleteDistrict("bob");
+        member = (MemberJpa) memberResource.getMember("bob").getEntity();
+        assertEquals(0, member.getDistrict());
+        member = (MemberJpa) memberResource.getMember("fred").getEntity();
+        assertEquals(0, member.getDistrict());
+        district = service.getDistrict();
+        assertEquals(0, district.size());
+        wardList = memberResource.getWardList();
+        assertEquals(2, wardList.size());
+
     }
 
     @Test

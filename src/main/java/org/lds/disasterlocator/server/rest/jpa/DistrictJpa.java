@@ -42,10 +42,14 @@ import org.lds.disasterlocator.shared.Member;
 @Entity(name="District")
 @Table(name = "District")
 @NamedQueries({
+    @NamedQuery(name = "District.deleteAll", query = "delete from District"),
     @NamedQuery(name = "District.deleteByLeader", query = "delete from District d where d.leader.household=:leader"),
-    @NamedQuery(name = "District.all", query = "select d from District d")
+    @NamedQuery(name = "District.all", query = "select d from District d"),
+    @NamedQuery(name = "District.byLeader", query = "select d from District d where d.leader.household=:leader")
 })
 public class DistrictJpa implements Serializable, District {
+
+    private static final long serialVersionUID = 1;
 
     @Id
     private int id;
@@ -55,27 +59,6 @@ public class DistrictJpa implements Serializable, District {
         return "District{" + "id=" + getId() + ", leader=" + getLeader() + ", assistant=" + getAssistant() + '}';
     }
 
-    @Override
-    public int hashCode() {
-        int hash = 5;
-        hash = 17 * hash + this.getId();
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final DistrictJpa other = (DistrictJpa) obj;
-        if (this.getId() != other.getId()) {
-            return false;
-        }
-        return true;
-    }
     // deleting a district should not delete the member
     @OneToOne(cascade= {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, targetEntity = MemberJpa.class)
     @Column(name="leader")
