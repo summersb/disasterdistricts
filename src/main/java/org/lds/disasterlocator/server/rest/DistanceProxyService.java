@@ -27,6 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.RollbackException;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -140,7 +141,7 @@ public class DistanceProxyService {
         // add destinations
         sb.append("&destinations=");
         int count = 0;
-        Set<LatLng> currentLatLng = new HashSet<>();
+        List<LatLng> currentLatLng = new ArrayList<>();
         for (int i = 0; i < dmr.getDestinations().size(); i++) {
             LatLng latLng = dmr.getDestinations().get(i);
             double memberLat = latLng.getJb();
@@ -158,7 +159,6 @@ public class DistanceProxyService {
             // request distances in chunks of 10 address
             if ((count > 0 && count % 10 == 0) || (i == dmr.getDestinations().size()-1 && count > 0)) {
                 count = 0;
-                currentLatLng.clear();
                 // make request, then reset sb and start again
                 // delete the trailing pipe character
                 sb.deleteCharAt(sb.length() - 1);
@@ -168,11 +168,11 @@ public class DistanceProxyService {
                 switch (response.getStatus()) {
                     case "OK":
                         logger.log(Level.INFO, "Successful query {0}", sb.toString());
-                        saveAddresses(response, leaderLat, leaderLng);
+                        saveAddresses(response, leaderLat, leaderLng, currentLatLng);
                         break;
                     case "OVER_QUERY_LIMIT":
                         // need to deal with pause and run again
-                        logger.info(("Over query limit, sleeping 10 seconds"));
+                        logger.warning(("Over query limit, sleeping 10 seconds"));
                         try {
                             int limitCount =0;
                             while ("OVER_QUERY_LIMIT".equals(response.getStatus())) {
@@ -186,7 +186,7 @@ public class DistanceProxyService {
                             }
                             if ("OK".equals(response.getStatus())) {
                                 logger.log(Level.INFO, "Successful query {0}", sb.toString());
-                                saveAddresses(response, leaderLat, leaderLng);
+                                saveAddresses(response, leaderLat, leaderLng, currentLatLng);
                             } else {
                                 logger.log(Level.SEVERE, "Received response {0} for query {1}", new Object[]{response.getStatus(), sb.toString()});
                             }
@@ -203,6 +203,7 @@ public class DistanceProxyService {
                 sb = new StringBuilder("http://maps.googleapis.com/maps/api/distancematrix/json?");
                 sb.append("origins=").append(leaderLat).append(",").append(leaderLng);
                 sb.append("&destinations=");
+                currentLatLng.clear();
             }
         }
         return Response.ok().build();
@@ -219,7 +220,7 @@ public class DistanceProxyService {
                 return response;
             }
         } catch (IOException ex) {
-            logger.log(Level.SEVERE, "Bad URL for distance matrix", ex);
+            logger.log(Level.SEVERE, "Unable to stream data from google", ex);
             return null;
         }
     }
@@ -273,18 +274,17 @@ public class DistanceProxyService {
         return Response.ok().build();
     }
 
-    private void saveDistance(double leaderLat, double leaderLng, String memberAddress, int value) {
+    private void saveDistance(double leaderLat, double leaderLng, LatLng memberLatLng, int value) {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
-        TypedQuery<MemberJpa> query = em.createNamedQuery("Member.byAddress", MemberJpa.class).setParameter("address", memberAddress);
-        MemberJpa member = query.getResultList().get(0);
         DistanceJpa dist = new DistanceJpa();
         dist.setLeaderLng(leaderLng);
         dist.setLeaderLat(leaderLat);
-        dist.setMemberLat(member.getLat());
-        dist.setMemberLng(member.getLng());
+        dist.setMemberLat(memberLatLng.getJb());
+        dist.setMemberLng(memberLatLng.getKb());
         dist.setDistance(value);
         em.persist(dist);
+        logger.log(Level.FINE, "Saving distance {0}", dist);
         em.getTransaction().commit();
     }
 
@@ -304,16 +304,18 @@ public class DistanceProxyService {
 
     }
 
-    private void saveAddresses(DistanceMatrixResponse response, double leaderLat, double leaderLng) {
+    private void saveAddresses(DistanceMatrixResponse response, double leaderLat, double leaderLng, List<LatLng> members) {
         List<Row> rows = response.getRows();
         for (int i = 0; i < rows.size(); i++) {
             Row row = rows.get(i);
             List<Element> elements = row.getElements();
-            List<String> destination_addresses = response.getDestination_addresses();
-            Element element = elements.get(0);
-            String memberAddress = destination_addresses.get(i);
-            // save address in db
-            saveDistance(leaderLat, leaderLng, memberAddress, element.getDistance().getValue());
+            // can not trust the address sent back from google, may change.
+            // instead lookup from member table by lat lng
+            for (int j = 0; j < elements.size(); j++) {
+                Element element = elements.get(j);
+                // save address in db
+                saveDistance(leaderLat, leaderLng, members.get(j), element.getDistance().getValue());
+            }
         }
     }
 
@@ -344,7 +346,7 @@ public class DistanceProxyService {
                 destinations.add(memberLatLng);
             }
             // get distances
-            logger.log(Level.INFO, "Getting distance for {0} MemberCount: {1}", new Object[]{leader.getHousehold(), destinations.size()});
+            logger.log(Level.FINE, "Getting distance for {0} MemberCount: {1}", new Object[]{leader.getHousehold(), destinations.size()});
             getDistanceMatrix(dmr);
         }
     }

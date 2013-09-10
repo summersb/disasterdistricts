@@ -48,7 +48,9 @@ public class Row {
         sb.append("{\"elements\":[");
         for (Element element : elements) {
             sb.append(element.toString());
+            sb.append(",");
         }
+        sb.deleteCharAt(sb.length()-1);
         sb.append("] }\n");
         return sb.toString();
     }

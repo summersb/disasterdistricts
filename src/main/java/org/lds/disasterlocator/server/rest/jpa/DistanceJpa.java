@@ -39,7 +39,8 @@ import javax.persistence.UniqueConstraint;
         + "and d.memberLat=:memberLat and d.memberLng=:memberLng"),
     @NamedQuery(name = "Distance.byClosest", query = "select d from Distance d where"
         +   " (d.memberLat=:memberLat and d.memberLng=:memberLng and d.leaderLat in (:leaderLatList) and d.leaderLng in (:leaderLngList)) "
-        + " order by d.distance asc")
+        + " order by d.distance asc"),
+    @NamedQuery(name = "Distance.deleteAll", query ="delete from Distance")
 })
 public class DistanceJpa implements Serializable {
 

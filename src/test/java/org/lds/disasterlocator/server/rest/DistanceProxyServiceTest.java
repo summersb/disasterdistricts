@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.lds.disasterlocator.server.rest.jpa.DistanceJpa;
 import org.lds.disasterlocator.server.rest.json.DistrictMatrixRequest;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 import org.lds.disasterlocator.server.rest.jpa.DistrictJpa;
 import org.lds.disasterlocator.server.rest.jpa.MemberJpa;
 import org.lds.disasterlocator.server.rest.json.Distance;
@@ -96,16 +97,8 @@ public class DistanceProxyServiceTest {
     public void tearDown() {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
-        TypedQuery<DistanceJpa> query = em.createQuery("select d from Distance d", DistanceJpa.class);
-        List<DistanceJpa> list = query.getResultList();
-        for (DistanceJpa distanceJpa : list) {
-            em.remove(distanceJpa);
-        }
-        TypedQuery<DistrictJpa> districtQuery = em.createQuery("select d from District d", DistrictJpa.class);
-        List<DistrictJpa> districtList = districtQuery.getResultList();
-        for (DistrictJpa districtJpa : districtList) {
-            em.remove(districtJpa);
-        }
+        em.createNamedQuery("Distance.deleteAll").executeUpdate();
+        em.createNamedQuery("District.deleteAll").executeUpdate();
         TypedQuery<MemberJpa> memberQuery = em.createQuery("select m from Member m", MemberJpa.class);
         List<MemberJpa> memberList = memberQuery.getResultList();
         for (MemberJpa memberJpa : memberList) {
@@ -220,6 +213,7 @@ public class DistanceProxyServiceTest {
         assertEquals(11, list.size());
     }
 
+    @Ignore
     @Test
     public void testComputeMembers() {
         // create 20 members
@@ -229,7 +223,7 @@ public class DistanceProxyServiceTest {
         DistanceMatrixResponse distMatrix = createDistanceMatrixResponse(0, 9, em);
         // matrix for remaining members
         DistanceMatrixResponse distMatrix2 = createDistanceMatrixResponse(9, 18, em);
-        distMatrix2.getRows().add(0, createDMRRows("0 mins", 0, "0 m", 0));
+        distMatrix2.getRows().get(0).getElements().add(0, createDMRElement("0 mins", 0, "0 m", 0));
         distMatrix2.getDestination_addresses().add(0, leader.getAddress());
         DistanceMatrixResponse distMatrix3 = createDistanceMatrixResponse(18, 20, em);
         String [] urls = {
@@ -310,34 +304,18 @@ public class DistanceProxyServiceTest {
     @Test
     public void testMemberNotAuto(){
         EntityManager em = emf.createEntityManager();
-        DistanceMatrixResponse distMatrix = createDistanceMatrixResponse(0, 2, em);
+        DistanceMatrixResponse distMatrix = createDistanceMatrixResponse(1, 2, em);
         // create leader
         MemberJpa leader = createLeader(em);
-        em.getTransaction().begin();
-        // make member non-auto
-        MemberJpa member = em.find(MemberJpa.class, "0Member Name");
-        member.setAuto(false);
-        em.persist(member);
-        em.getTransaction().commit();
-        String [] urls = {
-         "http://maps.googleapis.com/maps/api/distancematrix/json?origins=0.0,0.5&destinations=2.0,2.5&sensor=false&mode=walking&units=metric"};
-        distanceProxyService.urlProvider = new MyURLProvider(urls, new String[]{distMatrix.toString()});
-        DistrictMatrixRequest dmr = createDistanceMatrixRequest(1, 2, leader);
-        Response response = distanceProxyService.getDistanceMatrix(dmr);
-        assertEquals(200, response.getStatus());
-    }
-
-    @Test
-    public void testMemberNotAuto2(){
-        EntityManager em = emf.createEntityManager();
-        DistanceMatrixResponse distMatrix = createDistanceMatrixResponse(0, 2, em);
-        // create leader
-        MemberJpa leader = createLeader(em);
-        distMatrix.getRows().add(createDMRRows("0 mins", 0, "0 m", 0));
+        distMatrix.getRows().get(0).getElements().add(createDMRElement("0 mins", 0, "0 m", 0));
         distMatrix.getDestination_addresses().add(leader.getAddress());
         em.getTransaction().begin();
         // make member non-auto
-        MemberJpa member = em.find(MemberJpa.class, "0Member Name");
+        MemberJpa member = new MemberJpa();
+        member.setHousehold("0Member Name");
+        member.setAddress("0:address");
+        member.setLat(1.0);
+        member.setLng(1.5);
         member.setAuto(false);
         em.persist(member);
         em.getTransaction().commit();
@@ -346,12 +324,12 @@ public class DistanceProxyServiceTest {
         distanceProxyService.urlProvider = new MyURLProvider(urls, new String[]{distMatrix.toString()});
         Response response = distanceProxyService.computeMembers();
         assertEquals(200, response.getStatus());
+        member = em.find(MemberJpa.class, "0Member Name");
+        assertEquals(0, member.getDistrict());
     }
 
-    private Row createDMRRows(String durationText, int durationValue, String distanceText, int distanceValue) {
-        Row row = new Row();
+    private Element createDMRElement(String durationText, int durationValue, String distanceText, int distanceValue) {
         Element element = new Element();
-        row.getElements().add(element);
         Distance d = new Distance();
         d.setValue(distanceValue);
         d.setText(distanceText);
@@ -361,7 +339,7 @@ public class DistanceProxyServiceTest {
         duration.setText(durationText);
         duration.setValue(durationValue);
         element.setDuration(duration);
-        return row;
+        return element;
     }
 
     private MemberJpa createLeader(EntityManager em) {
@@ -386,6 +364,9 @@ public class DistanceProxyServiceTest {
         em.getTransaction().begin();
         DistanceMatrixResponse distMatrix = new DistanceMatrixResponse();
         distMatrix.getOrigin_addresses().add("Address");
+        List<Row> rows = distMatrix.getRows();
+        Row row = new Row();
+        rows.add(row);
         for (int i = start; i < stop; i++) {
             MemberJpa member = new MemberJpa();
             member.setHousehold(i + "Member Name");
@@ -395,8 +376,7 @@ public class DistanceProxyServiceTest {
             em.persist(member);
 
             distMatrix.getDestination_addresses().add(i + ":address");
-            Row row = createDMRRows(i+":long time", 100*i, i+ " km", i);
-            distMatrix.getRows().add(row);
+            row.getElements().add(createDMRElement(i+":long time", 100*i, i+ " km", i));
         }
         em.getTransaction().commit();
         return distMatrix;

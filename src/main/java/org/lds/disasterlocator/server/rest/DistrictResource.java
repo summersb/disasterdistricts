@@ -56,11 +56,9 @@ public class DistrictResource {
     @GET
     public List<DistrictJpa> getDistrict() {
         EntityManager em = emf.createEntityManager();
-        TypedQuery<DistrictJpa> q = em.createQuery("select d from District d", DistrictJpa.class);
+        TypedQuery<DistrictJpa> q = em.createNamedQuery("District.all", DistrictJpa.class);
         List<DistrictJpa> resultList = q.getResultList();
-        for (DistrictJpa district : resultList) {
-            em.detach(district);
-        }
+        em.close();
         return resultList;
     }
 

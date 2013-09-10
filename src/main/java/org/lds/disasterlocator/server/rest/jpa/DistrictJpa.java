@@ -42,6 +42,7 @@ import org.lds.disasterlocator.shared.Member;
 @Entity(name="District")
 @Table(name = "District")
 @NamedQueries({
+    @NamedQuery(name = "District.deleteAll", query = "delete from District"),
     @NamedQuery(name = "District.deleteByLeader", query = "delete from District d where d.leader.household=:leader"),
     @NamedQuery(name = "District.all", query = "select d from District d"),
     @NamedQuery(name = "District.byLeader", query = "select d from District d where d.leader.household=:leader")
