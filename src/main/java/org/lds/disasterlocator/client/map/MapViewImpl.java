@@ -157,67 +157,69 @@ public class MapViewImpl extends Composite implements MapView {
         return rollover;
     }
 
-    protected void drawInfoWindow(Marker marker, MouseEvent mouseEvent, final Member member) {
+    protected void drawInfoWindow(Marker marker, MouseEvent mouseEvent, final Member memberIn) {
 
         if (marker == null || mouseEvent == null) {
             return;
         }
         VerticalPanel vert = new VerticalPanel();
 
-        HTML html = new HTML("<b>" + member.getHousehold() + "</b>");
-        vert.add(html);
-        String[] tokens = member.getAddress().split("[,]");
-        Label lbl = new Label(tokens[0]);
-        vert.add(lbl);
-        CheckBox checkbox = new CheckBox("District Leader", true);
-        checkbox.setValue(activity.isLeader(member));
+        for(final Member member: getMembersAtLocation(memberIn))
+        {
+            HTML html = new HTML("<b>" + member.getHousehold() + "</b>");
+            vert.add(html);
+            String[] tokens = member.getAddress().split("[,]");
+            Label lbl = new Label(tokens[0]);
+            vert.add(lbl);
+            CheckBox checkbox = new CheckBox("District Leader", true);
+            checkbox.setValue(activity.isLeader(member));
 
 
-        // Hook up a handler to find out when it's clicked.
-        checkbox.addClickHandler(new ClickHandler() {
-            @Override
-            public void onClick(ClickEvent event) {
-                boolean checked = ((CheckBox) event.getSource()).getValue();
-                if (checked) {
-                    activity.setLeader(member);
-                } else {
+            // Hook up a handler to find out when it's clicked.
+            checkbox.addClickHandler(new ClickHandler() {
+                @Override
+                public void onClick(ClickEvent event) {
+                    boolean checked = ((CheckBox) event.getSource()).getValue();
+                    if (checked) {
+                        activity.setLeader(member);
+                    } else {
+                    }
                 }
-            }
-        });
+            });
 
-        vert.add(checkbox);
-        checkbox = new CheckBox("Automatic Assignment", true);
-        checkbox.setValue(member.isAuto());
+            vert.add(checkbox);
+            checkbox = new CheckBox("Automatic Assignment", true);
+            checkbox.setValue(member.isAuto());
 
-        // Hook up a handler to find out when it's clicked.
-        checkbox.addClickHandler(new ClickHandler() {
-            @Override
-            public void onClick(ClickEvent event) {
-                boolean checked = ((CheckBox) event.getSource()).getValue();
-                member.setAuto(checked);
-                activity.setAuto(member);
-            }
-        });
-
-        vert.add(checkbox);
-        HorizontalPanel horiz = new HorizontalPanel();
-        lbl = new Label("District:");
-        horiz.add(lbl);
-        TextBox tb = new TextBox();
-
-        tb.addKeyPressHandler(new KeyPressHandler() {
-            @Override
-            public void onKeyPress(KeyPressEvent event) {
-                if (event.getCharCode() == KeyCodes.KEY_ENTER) {
-                    setDistrict();
+            // Hook up a handler to find out when it's clicked.
+            checkbox.addClickHandler(new ClickHandler() {
+                @Override
+                public void onClick(ClickEvent event) {
+                    boolean checked = ((CheckBox) event.getSource()).getValue();
+                    member.setAuto(checked);
+                    activity.setAuto(member);
                 }
-            }
-        });
+            });
 
-        tb.setValue(getDistrict(member));
-        horiz.add(tb);
-        vert.add(horiz);
+            vert.add(checkbox);
+            HorizontalPanel horiz = new HorizontalPanel();
+            lbl = new Label("District:");
+            horiz.add(lbl);
+            TextBox tb = new TextBox();
 
+            tb.addKeyPressHandler(new KeyPressHandler() {
+                @Override
+                public void onKeyPress(KeyPressEvent event) {
+                    if (event.getCharCode() == KeyCodes.KEY_ENTER) {
+                        setDistrict();
+                    }
+                }
+            });
+
+            tb.setValue(getDistrict(member));
+            horiz.add(tb);
+            vert.add(horiz);
+        }
         InfoWindowOptions options = InfoWindowOptions.newInstance();
         options.setContent(vert);
 
@@ -319,6 +321,20 @@ public class MapViewImpl extends Composite implements MapView {
             marker.addClickHandler(new MarkerHandler(marker, member));
 
         }
+    }
+
+    private Iterable<Member> getMembersAtLocation(Member memberIn) {
+        double lat = memberIn.getLat();
+        double lng = memberIn.getLng();
+        double range = 0.0005;
+        List<Member> members = new ArrayList<Member>();
+        for (Member member : memberList) {
+            if(member.getLat() > lat-range && member.getLat() < lat+range &&
+                    member.getLng() > lng-range && member.getLng() < lng+range){
+                members.add(member);
+            }
+        }
+        return members;
     }
 
     @UiHandler("load")
