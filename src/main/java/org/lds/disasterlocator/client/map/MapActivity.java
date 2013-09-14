@@ -209,4 +209,28 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
         });
         computeDistrictMembers.compute(members);
     }
+
+    @Override
+    public void deleteLeader(Member member) {
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.DELETE, MyConstants.REST_URL + "district/" + member.getHousehold() + "?stopevilcaching=" + new Date().getTime());
+        rb.setHeader("Content-Type", "application/json;charset=UTF-8");
+        try {
+            rb.sendRequest("", new RequestCallback() {
+                @Override
+                public void onResponseReceived(Request request, Response response) {
+                    if(response.getStatusCode() != MyConstants.OK){
+                        Window.alert("Failed to unassign leader");
+                    }
+                    loadDistrictData();
+                }
+
+                @Override
+                public void onError(Request request, Throwable exception) {
+                    Window.alert("Error occured " + exception.getLocalizedMessage());
+                }
+            });
+        } catch (RequestException ex) {
+            logger.log(Level.SEVERE, null, ex);
+        }
+    }
 }
