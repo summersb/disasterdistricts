@@ -168,7 +168,7 @@ public class ComputeDistrictMembers {
     }
 
     private void loadDistrictLeaders(){
-        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, "rest/district/list");
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, MyConstants.REST_URL + "district/list");
         rb.setHeader("Content-Type", "application/json;charset=UTF-8");
         try {
             rb.sendRequest("", new RequestCallback() {

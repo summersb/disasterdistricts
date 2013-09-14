@@ -83,7 +83,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
     }
 
     private void loadMemberData() {
-        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, "rest/member/list?stopevilcaching=" + new Date().getTime());
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, MyConstants.REST_URL + "member/list?stopevilcaching=" + new Date().getTime());
         rb.setHeader("Content-Type", "application/json;charset=UTF-8");
         try {
             rb.sendRequest("", new RequestCallback() {
@@ -109,7 +109,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
     }
 
     private void loadDistrictData() {
-        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, "rest/district/list?stopevilcaching=" + new Date().getTime());
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, MyConstants.REST_URL + "district/list?stopevilcaching=" + new Date().getTime());
         rb.setHeader("Content-Type", "application/json;charset=UTF-8");
         try {
             rb.sendRequest("", new RequestCallback() {
@@ -148,7 +148,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
 
     @Override
     public void setLeader(Member member) {
-        RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, "rest/district/" + member.getHousehold() + "?stopevilcaching=" + new Date().getTime());
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, MyConstants.REST_URL + "district/" + member.getHousehold() + "?stopevilcaching=" + new Date().getTime());
         rb.setHeader("Content-Type", "application/json;charset=UTF-8");
         try {
             rb.sendRequest("", new RequestCallback() {
