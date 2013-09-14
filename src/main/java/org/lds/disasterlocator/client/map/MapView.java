@@ -43,5 +43,7 @@ public interface MapView extends IsWidget {
         void setLeader(Member member);
         void setAuto(Member member);
         void computeDistrictMembers();
+
+        public void deleteLeader(Member member);
     }
 }

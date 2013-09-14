@@ -36,7 +36,8 @@ import org.lds.disasterlocator.server.rest.json.LatLng;
     @NamedQuery(name = "Member.byHousehold", query = "select m from Member m where m.household=:household"),
     @NamedQuery(name = "Member.withoutDistance", query = "select m from Member m where "
         + "not exists (select d from Distance d where d.memberLat=m.lat and d.memberLng=m.lng)"),
-    @NamedQuery(name ="Member.byAddress", query = "select m from Member m where m.address=:address")
+    @NamedQuery(name = "Member.byAddress", query = "select m from Member m where m.address=:address"),
+    @NamedQuery(name = "Member.byDistrictId", query = "select m from Member m where m.district=:id")
 })
 public class MemberJpa implements Serializable, Member {
 

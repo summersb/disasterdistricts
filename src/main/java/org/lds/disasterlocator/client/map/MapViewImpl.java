@@ -183,6 +183,7 @@ public class MapViewImpl extends Composite implements MapView {
                     if (checked) {
                         activity.setLeader(member);
                     } else {
+                        activity.deleteLeader(member);
                     }
                 }
             });
