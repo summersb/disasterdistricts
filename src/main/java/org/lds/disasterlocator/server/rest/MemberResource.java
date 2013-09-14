@@ -151,6 +151,7 @@ public class MemberResource {
     public Response getMember(@PathParam("household") String household){
         EntityManager em = emf.createEntityManager();
         MemberJpa member = em.find(MemberJpa.class, household);
+        em.close();
         if(member == null){
             return Response.status(Status.NOT_FOUND).build();
         }
