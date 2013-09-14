@@ -213,7 +213,6 @@ public class DistanceProxyServiceTest {
         assertEquals(11, list.size());
     }
 
-    @Ignore
     @Test
     public void testComputeMembers() {
         // create 20 members

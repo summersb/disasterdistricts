@@ -124,7 +124,6 @@ public class ComputeDistrictMembers {
             RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, MyConstants.REST_URL + "distance");
             rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
             String json = new JSONObject(dmr).toString();
-            logger.info(json);
             try {
                 distanceHandler.addCall();
                 rb.sendRequest(json, distanceHandler);

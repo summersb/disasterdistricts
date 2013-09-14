@@ -84,7 +84,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
 
     private void loadMemberData() {
         RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, MyConstants.REST_URL + "member/list?stopevilcaching=" + new Date().getTime());
-        rb.setHeader("Content-Type", "application/json;charset=UTF-8");
+        rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
         try {
             rb.sendRequest("", new RequestCallback() {
                 @Override
@@ -94,7 +94,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
                     AutoBeanFactory autoBeanFactory = clientFactory.getAutoBeanFactory();
                     AutoBean<MemberList> memberListAB = AutoBeanCodex.decode(autoBeanFactory, MemberList.class, "{\"members\":" + json + "}");
                     MemberList memberList = memberListAB.as();
-                    view.plotHouses(memberList.getMembers());
+                    view.setMembers(memberList.getMembers());
                     members = memberList.getMembers();
                 }
 
@@ -110,7 +110,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
 
     private void loadDistrictData() {
         RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, MyConstants.REST_URL + "district/list?stopevilcaching=" + new Date().getTime());
-        rb.setHeader("Content-Type", "application/json;charset=UTF-8");
+        rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
         try {
             rb.sendRequest("", new RequestCallback() {
                 @Override
@@ -149,7 +149,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
     @Override
     public void setLeader(Member member) {
         RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, MyConstants.REST_URL + "district/" + member.getHousehold() + "?stopevilcaching=" + new Date().getTime());
-        rb.setHeader("Content-Type", "application/json;charset=UTF-8");
+        rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
         try {
             rb.sendRequest("", new RequestCallback() {
                 @Override
@@ -212,8 +212,8 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
 
     @Override
     public void deleteLeader(Member member) {
-        RequestBuilder rb = new RequestBuilder(RequestBuilder.DELETE, MyConstants.REST_URL + "district/" + member.getHousehold() + "?stopevilcaching=" + new Date().getTime());
-        rb.setHeader("Content-Type", "application/json;charset=UTF-8");
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.DELETE, MyConstants.REST_URL + "district/" + member.getHousehold());
+        rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
         try {
             rb.sendRequest("", new RequestCallback() {
                 @Override
@@ -221,7 +221,36 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
                     if(response.getStatusCode() != MyConstants.OK){
                         Window.alert("Failed to unassign leader");
                     }
+                    // clear client data
+                    view.clearState();
+                    loadMemberData();
                     loadDistrictData();
+                }
+
+                @Override
+                public void onError(Request request, Throwable exception) {
+                    Window.alert("Error occured " + exception.getLocalizedMessage());
+                }
+            });
+        } catch (RequestException ex) {
+            logger.log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Override
+    public void updateMember(Member member) {
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.PUT, MyConstants.REST_URL + "member/");
+        rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
+        AutoBeanFactory factory = clientFactory.getAutoBeanFactory();
+        AutoBean<Member> ab = factory.create(Member.class, member);
+        String json = AutoBeanCodex.encode(ab).getPayload();
+        try {
+            rb.sendRequest(json, new RequestCallback() {
+                @Override
+                public void onResponseReceived(Request request, Response response) {
+                    if(response.getStatusCode() != MyConstants.OK){
+                        Window.alert("Failed to update member");
+                    }
                 }
 
                 @Override

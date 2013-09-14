@@ -44,7 +44,7 @@ import org.lds.disasterlocator.shared.Member;
 @NamedQueries({
     @NamedQuery(name = "District.deleteAll", query = "delete from District"),
     @NamedQuery(name = "District.deleteByLeader", query = "delete from District d where d.leader.household=:leader"),
-    @NamedQuery(name = "District.all", query = "select d from District d"),
+    @NamedQuery(name = "District.all", query = "select d from District d order by d.id"),
     @NamedQuery(name = "District.byLeader", query = "select d from District d where d.leader.household=:leader")
 })
 public class DistrictJpa implements Serializable, District {

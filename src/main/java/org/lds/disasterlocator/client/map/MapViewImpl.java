@@ -17,11 +17,10 @@ package org.lds.disasterlocator.client.map;
 
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.KeyCodes;
-import com.google.gwt.event.dom.client.KeyPressEvent;
-import com.google.gwt.event.dom.client.KeyPressHandler;
 import com.google.gwt.geolocation.client.Geolocation;
 import com.google.gwt.geolocation.client.Position;
 import com.google.gwt.geolocation.client.PositionError;
@@ -51,7 +50,7 @@ import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 import java.util.ArrayList;
@@ -59,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import org.lds.disasterlocator.client.load.LoadPlace;
 import org.lds.disasterlocator.shared.District;
 import org.lds.disasterlocator.shared.Member;
@@ -69,6 +69,7 @@ import org.lds.disasterlocator.shared.Member;
  */
 public class MapViewImpl extends Composite implements MapView {
 
+    private static final Logger logger = Logger.getLogger(MapViewImpl.class.getName());
     private static MapUiBinder uiBinder = GWT.create(MapUiBinder.class);
     @UiField HTMLPanel map;
     @UiField HTMLPanel topMenu;
@@ -79,7 +80,8 @@ public class MapViewImpl extends Composite implements MapView {
     private List<Member> memberList;
     private List<District> districtList;
     private Map<String, Marker> markerSet = new HashMap<String, Marker>();
-    private static final String leaderColor = "L|00ff00|000000";
+    private static final String LEADER_COLOR = "L|00ff00|000000";
+    private static final String MEMBER_COLOR = "|FF0000|000000";
     private List<Circle> districtCircleList = new ArrayList<Circle>();
 
     public MapViewImpl() {
@@ -133,31 +135,33 @@ public class MapViewImpl extends Composite implements MapView {
         this.activity = activity;
     }
 
+    @Override
+    public void clearState() {
+        memberList = null;
+        districtList = null;
+        for (Circle circle : districtCircleList) {
+            circle.setMap(null);
+        }
+        districtCircleList.clear();
+        Set<String> keySet = markerSet.keySet();
+        for (String key : keySet) {
+            Marker m = markerSet.get(key);
+            m.setMap((MapWidget)null);
+        }
+        markerSet.clear();
+    }
+
+    @Override
+    public void setMembers(List<Member> members) {
+        memberList = members;
+        plotHouses();
+    }
+
     interface MapUiBinder extends UiBinder<Widget, MapViewImpl> {
     }
     private MapWidget mapWidget;
 
-    private void draw() {
-
-        map.clear();
-
-        renderMap();
-//        createSpiderdfier();
-    }
-
-    private String memberInfo(Member member) {
-        String rollover;
-        String[] tokens;
-        rollover = member.getHousehold();
-        rollover += "\n";
-        tokens = member.getAddress().split("[,]");
-        rollover += tokens[0];
-        rollover += "\n";
-        rollover += "District: " + member.getDistrict();
-        return rollover;
-    }
-
-    protected void drawInfoWindow(Marker marker, MouseEvent mouseEvent, final Member memberIn) {
+    protected void drawInfoWindow(final Marker marker, MouseEvent mouseEvent, final Member memberIn) {
 
         if (marker == null || mouseEvent == null) {
             return;
@@ -206,19 +210,29 @@ public class MapViewImpl extends Composite implements MapView {
             HorizontalPanel horiz = new HorizontalPanel();
             lbl = new Label("District:");
             horiz.add(lbl);
-            TextBox tb = new TextBox();
+            final ListBox lb = new ListBox(false);
+            for (District district : districtList) {
+                lb.addItem(district.getLeader().getHousehold(), Integer.toString(district.getId()));
+            }
+            // find the right district to mark as selected
+            for (int i = 0; i < lb.getItemCount(); i++) {
+                if(lb.getValue(i).equals(Integer.toString(member.getDistrict()))){
+                    lb.setSelectedIndex(i);
+                }
+            }
+            lb.addChangeHandler(new ChangeHandler() {
 
-            tb.addKeyPressHandler(new KeyPressHandler() {
                 @Override
-                public void onKeyPress(KeyPressEvent event) {
-                    if (event.getCharCode() == KeyCodes.KEY_ENTER) {
-                        setDistrict();
-                    }
+                public void onChange(ChangeEvent event) {
+                    int id = Integer.parseInt(lb.getValue(lb.getSelectedIndex()));
+                    member.setDistrict(id);
+                    activity.updateMember(member);
+                    marker.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + id + MEMBER_COLOR);
+                    marker.setTitle(Integer.toString(id));
                 }
             });
 
-            tb.setValue(getDistrict(member));
-            horiz.add(tb);
+            horiz.add(lb);
             vert.add(horiz);
         }
         InfoWindowOptions options = InfoWindowOptions.newInstance();
@@ -239,10 +253,6 @@ public class MapViewImpl extends Composite implements MapView {
             result = String.valueOf(member.getDistrict());
         }
         return result;
-    }
-
-    private void setDistrict() {
-        Window.alert("setDistrict");
     }
 
     private String rollOver(Member member) {
@@ -276,14 +286,7 @@ public class MapViewImpl extends Composite implements MapView {
     @Override
     public void setDistricts(List<District> list){
         districtList = list;
-        Set<String> memberHousehold = markerSet.keySet();
-        for (String household : memberHousehold) {
-            if(isLeader(household)){
-                Marker marker = markerSet.get(household);
-                marker.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + leaderColor);
-                marker.setZindex(1000);
-            }
-        }
+        plotHouses();
     }
 
     private boolean isLeader(String household){
@@ -297,30 +300,37 @@ public class MapViewImpl extends Composite implements MapView {
         return false;
     }
 
-    @Override
-    public void plotHouses(List<Member> members) {
-        memberList = members;
-        for (final Member member : members) {
-            LatLng center = LatLng.newInstance(member.getLat(), member.getLng());
-            MarkerOptions options = MarkerOptions.newInstance();
-            options.setPosition(center);
-            options.setTitle(rollOver(member));
-            if(member.getDistrict() != 0){
-                // we can set district colors here also
-                String color = member.getDistrict() + "|FF0000|000000";
-                if(isLeader(member.getHousehold())){
-                    color = leaderColor;
-                    options.setZindex(1000);
+    public void plotHouses() {
+        if (memberList != null && districtList != null) {
+            for (final Member member : memberList) {
+                LatLng center = LatLng.newInstance(member.getLat(), member.getLng());
+                MarkerOptions options = MarkerOptions.newInstance();
+                options.setPosition(center);
+                options.setTitle(rollOver(member));
+                if (member.getDistrict() != 0) {
+                    // we can set district colors here also
+                    String color = member.getDistrict() + MEMBER_COLOR;
+                    if (isLeader(member.getHousehold())) {
+                        color = LEADER_COLOR;
+                        options.setZindex(1000);
+                    }
+                    options.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + color);
                 }
-                options.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + color);
+
+                final Marker marker = Marker.newInstance(options);
+                marker.setMap(mapWidget);
+                markerSet.put(member.getHousehold(), marker);
+
+                marker.addClickHandler(new MarkerHandler(marker, member));
             }
-
-            final Marker marker = Marker.newInstance(options);
-            marker.setMap(mapWidget);
-            markerSet.put(member.getHousehold(), marker);
-
-            marker.addClickHandler(new MarkerHandler(marker, member));
-
+            Set<String> memberHousehold = markerSet.keySet();
+            for (String household : memberHousehold) {
+                if (isLeader(household)) {
+                    Marker marker = markerSet.get(household);
+                    marker.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + LEADER_COLOR);
+                    marker.setZindex(1000);
+                }
+            }
         }
     }
 
