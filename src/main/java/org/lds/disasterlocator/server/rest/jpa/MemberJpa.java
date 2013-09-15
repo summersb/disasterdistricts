@@ -54,11 +54,12 @@ public class MemberJpa implements Serializable, Member {
         lng = m.getLng();
         phone = m.getPhone();
         district = m.getDistrict();
+        auto = m.getAuto();
     }
 
     @Override
     public String toString() {
-        return "Member{" + "household=" + getHousehold() + ", address=" + getAddress() + ", city=" + getCity() + ", zip=" + getZip() + ", email=" + getEmail() + ", lat=" + getLat() + ", lng=" + getLng() + ", phone=" + getPhone() + ", district=" + getDistrict() + ", auto=" + isAuto() + "}";
+        return "Member{" + "household=" + getHousehold() + ", address=" + getAddress() + ", city=" + getCity() + ", zip=" + getZip() + ", email=" + getEmail() + ", lat=" + getLat() + ", lng=" + getLng() + ", phone=" + getPhone() + ", district=" + getDistrict() + ", auto=" + getAuto() + "}";
     }
 
     public LatLng getLocation(){
@@ -77,6 +78,7 @@ public class MemberJpa implements Serializable, Member {
     private double lng;
     private String phone;
     private int district = 0;// 0 is unassigned
+    @Column(name="Automatic")
     private boolean auto = true;
 
     /**
@@ -240,7 +242,7 @@ public class MemberJpa implements Serializable, Member {
     /**
      * @return the auto
      */
-    public boolean isAuto() {
+    public boolean getAuto() {
         return auto;
     }
 

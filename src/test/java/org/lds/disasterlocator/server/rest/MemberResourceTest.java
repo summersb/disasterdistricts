@@ -71,11 +71,14 @@ public class MemberResourceTest {
         Response response = memberResource.createMember(json);
         assertEquals(200, response.getStatus());
         member.setAddress("test");
-        memberResource.updateMember(new MemberJpa(member));
+        member.setAuto(false);
+        json = AutoBeanCodex.encode(memberab).getPayload();
+        memberResource.updateMember(json);
         response = memberResource.getMember("bob");
         assertEquals(200, response.getStatus());
         member = (Member) response.getEntity();
         assertEquals("test", member.getAddress());
+        assertEquals(false, member.getAuto());
     }
 
     @Test
@@ -109,9 +112,11 @@ public class MemberResourceTest {
     public void testMissingMember() {
         Response response = memberResource.getMember("missing");
         assertEquals(404, response.getStatus());
-        MemberJpa missingMember = new MemberJpa();
+        AutoBean<Member> memberab = factory.create(Member.class);
+        Member missingMember = memberab.as();
         missingMember.setHousehold("missing");
-        response = memberResource.updateMember(missingMember);
+        String json = AutoBeanCodex.encode(memberab).getPayload();
+        response = memberResource.updateMember(json);
         assertEquals(404, response.getStatus());
         memberResource.deleteMember("missing");
         assertEquals(404, response.getStatus());

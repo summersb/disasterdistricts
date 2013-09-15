@@ -92,7 +92,8 @@ public class DistrictResourceTest {
         DistrictJpa newDistrict = service.createNewDistrict("bob");
         MemberJpa fred = (MemberJpa) memberResource.getMember("fred").getEntity();
         fred.setDistrict(newDistrict.getId());
-        memberResource.updateMember(fred);
+        AutoBean<Member> memberab = factory.create(Member.class, fred);
+        memberResource.updateMember(AutoBeanCodex.encode(memberab).getPayload());
         MemberJpa member = (MemberJpa) memberResource.getMember("bob").getEntity();
         assertEquals(newDistrict.getId(), member.getDistrict());
         service.deleteDistrict("bob");

@@ -118,7 +118,7 @@ public interface Member {
      * a district based on their proximity to a district leader
      * @return
      */
-    boolean isAuto();
+    boolean getAuto();
     void setAuto(boolean auto);
 
 }

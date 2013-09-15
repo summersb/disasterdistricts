@@ -194,7 +194,7 @@ public class MapViewImpl extends Composite implements MapView {
 
             vert.add(checkbox);
             checkbox = new CheckBox("Automatic Assignment", true);
-            checkbox.setValue(member.isAuto());
+            checkbox.setValue(member.getAuto());
 
             // Hook up a handler to find out when it's clicked.
             checkbox.addClickHandler(new ClickHandler() {
