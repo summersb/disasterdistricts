@@ -30,6 +30,7 @@ Uncomment this for XHTML entities
             <g:HorizontalPanel>
                 <g:Button ui:field="load">Load Data</g:Button>
                 <g:Button ui:field="compute">Compute District Members</g:Button>
+                <g:Button ui:field="district">District List</g:Button>
             </g:HorizontalPanel>
         </g:HTMLPanel>
         <g:HTMLPanel ui:field="map" styleName="{style.mapPanel}">

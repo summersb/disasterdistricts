@@ -53,6 +53,7 @@ import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 import java.util.List;
+import org.lds.disasterlocator.client.district.DistrictPlace;
 import org.lds.disasterlocator.client.load.LoadPlace;
 import org.lds.disasterlocator.shared.Member;
 
@@ -71,6 +72,9 @@ public class MapViewImpl extends Composite implements MapView {
     Button load;
     @UiField
     Button compute;
+    @UiField
+    Button district;
+    
     private Activity activity;
     private List<Member> memberList;
 
@@ -290,6 +294,11 @@ public class MapViewImpl extends Composite implements MapView {
     public void computeMembers(ClickEvent event) {
         activity.computeDistrictMembers();
     }
+    
+    @UiHandler("district")
+    public void district(ClickEvent event) {
+        activity.goTo(new DistrictPlace("lists"));
+    }    
 
     private native void createSpiderdfier()/*-{
      oms = new OverlappingMarkerSpiderfier(map, {
