@@ -112,9 +112,9 @@ public class ComputeDistrictMembers {
                 double distance = SphericalUtils.computeDistanceBetween(leaderLatLng, memberlatlng);
                 if(distance < 2000){
                     if (member.isAuto()) {
-                        if (!member.getHousehold().equals(leader.getHousehold())) {
+                        //if (!member.getHousehold().equals(leader.getHousehold())) {
                             memberArray.push(memberlatlng);
-                        }
+                        //}
                     }
                 }
             }

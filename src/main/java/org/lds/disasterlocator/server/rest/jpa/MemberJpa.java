@@ -53,6 +53,7 @@ public class MemberJpa implements Serializable, Member {
         lat = m.getLat();
         lng = m.getLng();
         phone = m.getPhone();
+        auto = m.isAuto();
         district = m.getDistrict();
     }
 
