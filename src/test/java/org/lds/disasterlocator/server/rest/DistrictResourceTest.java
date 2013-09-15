@@ -46,16 +46,8 @@ public class DistrictResourceTest {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("disaster-test");
         service = new DistrictResource(emf);
         memberResource = new MemberResource(emf);
-        factory = AutoBeanFactorySource.create(MyAutoBeanFactory.class);
-        AutoBean<Member> memberab = factory.create(Member.class);
-        Member member = memberab.as();
-        member.setHousehold("bob");
-        String json = AutoBeanCodex.encode(memberab).getPayload();
-        memberResource.createMember(json);
-        member = memberab.as();
-        member.setHousehold("fred");
-        json = AutoBeanCodex.encode(memberab).getPayload();
-        memberResource.createMember(json);
+        createMember("bob");
+        createMember("fred");
     }
 
     @After
@@ -89,27 +81,74 @@ public class DistrictResourceTest {
         assertEquals(1, district.size());
         assertEquals("bob", district.get(0).getLeader().getHousehold());
         assertEquals("fred", district.get(0).getAssistant().getHousehold());
+        MemberJpa member = (MemberJpa) memberResource.getMember("bob").getEntity();
+        assertEquals(1, member.getDistrict());
+        member = (MemberJpa) memberResource.getMember("fred").getEntity();
+        assertEquals(1, member.getDistrict());
     }
 
     @Test
     public void testDeleteDistrict() {
         DistrictJpa newDistrict = service.createNewDistrict("bob");
-        service.deleteDistrict("bob");
+        MemberJpa fred = (MemberJpa) memberResource.getMember("fred").getEntity();
+        fred.setDistrict(newDistrict.getId());
+        memberResource.updateMember(fred);
         MemberJpa member = (MemberJpa) memberResource.getMember("bob").getEntity();
+        assertEquals(newDistrict.getId(), member.getDistrict());
+        service.deleteDistrict("bob");
+        // test that fred is not in district anymore
+        fred = (MemberJpa) memberResource.getMember("fred").getEntity();
+        assertEquals(0, fred.getDistrict());
+        member = (MemberJpa) memberResource.getMember("bob").getEntity();
         assertEquals(0, member.getDistrict());
         List<DistrictJpa> district = service.getDistrict();
         assertEquals(0, district.size());
         List<MemberJpa> wardList = memberResource.getWardList();
         assertEquals(2, wardList.size());
+        // test delete with assistant
+        service.createNewDistrict("bob", "fred");
+        member = (MemberJpa) memberResource.getMember("bob").getEntity();
+        assertEquals(1, member.getDistrict());
+        member = (MemberJpa) memberResource.getMember("fred").getEntity();
+        assertEquals(1, member.getDistrict());
+        service.deleteDistrict("bob");
+        member = (MemberJpa) memberResource.getMember("bob").getEntity();
+        assertEquals(0, member.getDistrict());
+        member = (MemberJpa) memberResource.getMember("fred").getEntity();
+        assertEquals(0, member.getDistrict());
+        district = service.getDistrict();
+        assertEquals(0, district.size());
+        wardList = memberResource.getWardList();
+        assertEquals(2, wardList.size());
+
     }
 
     @Test
-    public void testCreateDistricts() throws Exception {
-
+    public void testDistrictDeleteAndRecreate(){
+        // create district 1
+        DistrictJpa bobDist = service.createNewDistrict("bob");
+        // create district 2
+        DistrictJpa fredDist = service.createNewDistrict("fred");
+        // add members to 1 and 2
+        MemberJpa john = createMember("john");
+        MemberJpa joe = createMember("joe");
+        // delete district 1
+        service.deleteDistrict("bob");
+        // create new district, should be district 1
+        DistrictJpa dist = service.createNewDistrict("bob");
+        assertEquals(1, dist.getId());
+        MemberJpa member = (MemberJpa) memberResource.getMember("john").getEntity();
+        assertEquals(0, member.getDistrict());
     }
 
-    @Test
-    public void testStoreDistrict() {
-
+    private MemberJpa createMember(String household){
+        factory = AutoBeanFactorySource.create(MyAutoBeanFactory.class);
+        AutoBean<Member> memberab = factory.create(Member.class);
+        Member member = memberab.as();
+        member.setHousehold(household);
+        String json = AutoBeanCodex.encode(memberab).getPayload();
+        memberResource.createMember(json);
+        MemberJpa mem = (MemberJpa) memberResource.getMember(household).getEntity();
+        return mem;
     }
 }

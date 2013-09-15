@@ -23,6 +23,7 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import org.lds.disasterlocator.server.rest.json.LatLng;
 
 /**
  *
@@ -32,7 +33,11 @@ import javax.persistence.Table;
 @Table(name="Member")
 @NamedQueries({
     @NamedQuery(name = "Member.all", query = "select m from Member m"),
-    @NamedQuery(name = "Member.byHousehold", query = "select m from Member m where m.household=:household")
+    @NamedQuery(name = "Member.byHousehold", query = "select m from Member m where m.household=:household"),
+    @NamedQuery(name = "Member.withoutDistance", query = "select m from Member m where "
+        + "not exists (select d from Distance d where d.memberLat=m.lat and d.memberLng=m.lng)"),
+    @NamedQuery(name = "Member.byAddress", query = "select m from Member m where m.address=:address"),
+    @NamedQuery(name = "Member.byDistrictId", query = "select m from Member m where m.district=:id")
 })
 public class MemberJpa implements Serializable, Member {
 
@@ -56,6 +61,10 @@ public class MemberJpa implements Serializable, Member {
         return "Member{" + "household=" + getHousehold() + ", address=" + getAddress() + ", city=" + getCity() + ", zip=" + getZip() + ", email=" + getEmail() + ", lat=" + getLat() + ", lng=" + getLng() + ", phone=" + getPhone() + ", district=" + getDistrict() + ", auto=" + isAuto() + "}";
     }
 
+    public LatLng getLocation(){
+        return new LatLng(getLat(), getLng());
+    }
+
     @Id
     private String household;
     private String address;
@@ -69,28 +78,6 @@ public class MemberJpa implements Serializable, Member {
     private String phone;
     private int district = 0;// 0 is unassigned
     private boolean auto = true;
-
-    @Override
-    public int hashCode() {
-        int hash = 5;
-        hash = 11 * hash + (this.getHousehold() != null ? this.getHousehold().hashCode() : 0);
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final MemberJpa other = (MemberJpa) obj;
-        if ((this.getHousehold() == null) ? (other.getHousehold() != null) : !this.household.equals(other.household)) {
-            return false;
-        }
-        return true;
-    }
 
     /**
      * @return the houseHold

@@ -29,6 +29,7 @@ import com.google.gwt.user.client.ui.IsWidget;
 import com.google.web.bindery.autobean.shared.AutoBean;
 import com.google.web.bindery.autobean.shared.AutoBeanCodex;
 import com.google.web.bindery.autobean.shared.AutoBeanFactory;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,8 +83,8 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
     }
 
     private void loadMemberData() {
-        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, "rest/member/list");
-        rb.setHeader("Content-Type", "application/json;charset=UTF-8");
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, MyConstants.REST_URL + "member/list?stopevilcaching=" + new Date().getTime());
+        rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
         try {
             rb.sendRequest("", new RequestCallback() {
                 @Override
@@ -93,7 +94,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
                     AutoBeanFactory autoBeanFactory = clientFactory.getAutoBeanFactory();
                     AutoBean<MemberList> memberListAB = AutoBeanCodex.decode(autoBeanFactory, MemberList.class, "{\"members\":" + json + "}");
                     MemberList memberList = memberListAB.as();
-                    view.plotHouses(memberList.getMembers());
+                    view.setMembers(memberList.getMembers());
                     members = memberList.getMembers();
                 }
 
@@ -108,8 +109,8 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
     }
 
     private void loadDistrictData() {
-        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, "rest/district/list");
-        rb.setHeader("Content-Type", "application/json;charset=UTF-8");
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, MyConstants.REST_URL + "district/list?stopevilcaching=" + new Date().getTime());
+        rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
         try {
             rb.sendRequest("", new RequestCallback() {
                 @Override
@@ -120,6 +121,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
                     AutoBean<DistrictList> districtListAB = AutoBeanCodex.decode(autoBeanFactory, DistrictList.class, "{\"districts\":" + json + "}");
                     DistrictList districtlist = districtListAB.as();
                     districtList = districtlist.getDistricts();
+                    view.setDistricts(districtlist.getDistricts());
                 }
 
                 @Override
@@ -146,8 +148,8 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
 
     @Override
     public void setLeader(Member member) {
-        RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, "rest/district/" + member.getHousehold());
-        rb.setHeader("Content-Type", "application/json;charset=UTF-8");
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, MyConstants.REST_URL + "district/" + member.getHousehold() + "?stopevilcaching=" + new Date().getTime());
+        rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
         try {
             rb.sendRequest("", new RequestCallback() {
                 @Override
@@ -173,7 +175,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
 
 
         try {
-            RequestBuilder rb = new RequestBuilder(RequestBuilder.PUT, MyConstants.REST_URL + "member");
+            RequestBuilder rb = new RequestBuilder(RequestBuilder.PUT, MyConstants.REST_URL + "member?stopevilcaching=" + new Date().getTime());
             rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
             rb.sendRequest(json, new RequestCallback() {
 
@@ -206,5 +208,58 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
             }
         });
         computeDistrictMembers.compute(members);
+    }
+
+    @Override
+    public void deleteLeader(Member member) {
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.DELETE, MyConstants.REST_URL + "district/" + member.getHousehold());
+        rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
+        try {
+            rb.sendRequest("", new RequestCallback() {
+                @Override
+                public void onResponseReceived(Request request, Response response) {
+                    if(response.getStatusCode() != MyConstants.OK){
+                        Window.alert("Failed to unassign leader");
+                    }
+                    // clear client data
+                    view.clearState();
+                    loadMemberData();
+                    loadDistrictData();
+                }
+
+                @Override
+                public void onError(Request request, Throwable exception) {
+                    Window.alert("Error occured " + exception.getLocalizedMessage());
+                }
+            });
+        } catch (RequestException ex) {
+            logger.log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Override
+    public void updateMember(Member member) {
+        RequestBuilder rb = new RequestBuilder(RequestBuilder.PUT, MyConstants.REST_URL + "member/");
+        rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
+        AutoBeanFactory factory = clientFactory.getAutoBeanFactory();
+        AutoBean<Member> ab = factory.create(Member.class, member);
+        String json = AutoBeanCodex.encode(ab).getPayload();
+        try {
+            rb.sendRequest(json, new RequestCallback() {
+                @Override
+                public void onResponseReceived(Request request, Response response) {
+                    if(response.getStatusCode() != MyConstants.OK){
+                        Window.alert("Failed to update member");
+                    }
+                }
+
+                @Override
+                public void onError(Request request, Throwable exception) {
+                    Window.alert("Error occured " + exception.getLocalizedMessage());
+                }
+            });
+        } catch (RequestException ex) {
+            logger.log(Level.SEVERE, null, ex);
+        }
     }
 }

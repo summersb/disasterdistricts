@@ -15,6 +15,7 @@
  */
 package org.lds.disasterlocator.server.rest;
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -31,6 +32,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.lds.disasterlocator.server.rest.jpa.DistrictJpa;
 import org.lds.disasterlocator.server.rest.jpa.MemberJpa;
+import org.lds.disasterlocator.shared.Member;
 
 /**
  *
@@ -55,11 +57,9 @@ public class DistrictResource {
     @GET
     public List<DistrictJpa> getDistrict() {
         EntityManager em = emf.createEntityManager();
-        TypedQuery<DistrictJpa> q = em.createQuery("select d from District d", DistrictJpa.class);
+        TypedQuery<DistrictJpa> q = em.createNamedQuery("District.all", DistrictJpa.class);
         List<DistrictJpa> resultList = q.getResultList();
-        for (DistrictJpa district : resultList) {
-            em.detach(district);
-        }
+        em.close();
         return resultList;
     }
 
@@ -68,13 +68,33 @@ public class DistrictResource {
     public Response deleteDistrict(@PathParam("leader") String leader){
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
+        // get district first
+        TypedQuery<DistrictJpa> distQuery = em.createNamedQuery("District.byLeader", DistrictJpa.class).setParameter("leader", leader);
+        List<DistrictJpa> resultList = distQuery.getResultList();
+        for (DistrictJpa districtJpa : resultList) {
+            int id = districtJpa.getId();
+            // reset leader and assistant district ids to 0
+            MemberJpa member = em.find(MemberJpa.class, leader);
+            if(member != null){
+                member.setDistrict(0);
+            }
+            em.persist(member);
+            Member assistant = districtJpa.getAssistant();
+            if(assistant != null){
+                MemberJpa assist = em.find(MemberJpa.class, assistant.getHousehold());
+                assist.setDistrict(0);
+                em.persist(assist);
+            }
+            // unassign all members of district
+            TypedQuery<MemberJpa> memberQuery = em.createNamedQuery("Member.byDistrictId", MemberJpa.class).setParameter("id", id);
+            List<MemberJpa> memberList = memberQuery.getResultList();
+            for (MemberJpa memberJpa : memberList) {
+                memberJpa.setDistrict(0);
+                em.persist(memberJpa);
+            }
+        }
         Query query = em.createNamedQuery("District.deleteByLeader").setParameter("leader", leader);
         query.executeUpdate();
-        MemberJpa member = em.find(MemberJpa.class, leader);
-        if(member != null){
-            member.setDistrict(0);
-        }
-        em.persist(member);
         em.getTransaction().commit();
         em.close();
         return Response.ok().build();
@@ -87,11 +107,8 @@ public class DistrictResource {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
         TypedQuery<DistrictJpa> find = em.createQuery("select d from District d", DistrictJpa.class);
-        int id = find.getResultList().size()+1;
+        int id = getDistId(find);
         MemberJpa leader = em.find(MemberJpa.class, leaderHousehold);
-        if(leader.getDistrict() != 0){
-            id = leader.getDistrict();
-        }
         DistrictJpa d = new DistrictJpa();
         d.setId(id);
         d.setLeader(leader);
@@ -109,7 +126,7 @@ public class DistrictResource {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
         TypedQuery<DistrictJpa> find = em.createQuery("select d from District d", DistrictJpa.class);
-        int id = find.getMaxResults();
+        int id = getDistId(find);
         MemberJpa leader = em.find(MemberJpa.class, leaderHousehold);
         MemberJpa assistant = em.find(MemberJpa.class, assistantHousehold);
         DistrictJpa d = new DistrictJpa();
@@ -125,15 +142,20 @@ public class DistrictResource {
         return Response.ok().build();
     }
 
-    @POST
-    public Response storeDistrict(DistrictJpa district) {
-        EntityManager em = emf.createEntityManager();
-        DistrictJpa find = em.find(DistrictJpa.class, district.getId());
-        if (find != null) {
-            em.merge(district);
-        } else {
-            em.persist(district);
+    /**
+     * Find the lowest id for a district number
+     * @param find
+     * @return
+     */
+    private int getDistId(TypedQuery<DistrictJpa> find) {
+        List<Integer> list = new ArrayList<>();
+        for (DistrictJpa districtJpa : find.getResultList()) {
+            list.add(districtJpa.getId());
         }
-        return Response.ok().build();
+        int id = 1;
+        while(list.contains(id)){
+            id++;
+        }
+        return id;
     }
 }

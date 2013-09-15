@@ -20,6 +20,7 @@ import com.google.gwt.user.client.ui.IsWidget;
 import com.google.web.bindery.autobean.shared.AutoBeanFactory;
 import java.util.List;
 import org.lds.disasterlocator.client.ClientFactory;
+import org.lds.disasterlocator.shared.District;
 import org.lds.disasterlocator.shared.Member;
 
 /**
@@ -29,8 +30,10 @@ import org.lds.disasterlocator.shared.Member;
 public interface MapView extends IsWidget {
 
     void setActivity(Activity activity);
-    void plotHouses(List<Member> members);
     void renderMap();
+    void setDistricts(List<District> districtlist);
+    void clearState();
+    void setMembers(List<Member> members);
 
     interface Activity {
 
@@ -41,5 +44,7 @@ public interface MapView extends IsWidget {
         void setLeader(Member member);
         void setAuto(Member member);
         void computeDistrictMembers();
+        void deleteLeader(Member member);
+        void updateMember(Member member);
     }
 }

@@ -17,13 +17,17 @@ package org.lds.disasterlocator.server.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.RollbackException;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -31,6 +35,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -59,9 +64,35 @@ public class DistanceProxyService {
 
     private static final Logger logger = Logger.getLogger(DistanceProxyService.class.getName());
     private final EntityManagerFactory emf;
+    interface URLProvider{
+        void setURL(String url);
+        InputStream openStream() throws IOException;
+    }
+
+    URLProvider urlProvider = new URLProvider() {
+        private URL url;
+
+        @Override
+        public void setURL(String u) {
+            try{
+                url = new URL(u);
+            } catch (MalformedURLException ex) {
+                logger.log(Level.SEVERE, "Bad URL", ex);
+            }
+        }
+
+        @Override
+        public InputStream openStream() throws IOException{
+            return url.openStream();
+        }
+    };
 
     public DistanceProxyService() {
         emf = EntityManagerFactoryHelper.createEntityManagerFactory();
+    }
+
+    DistanceProxyService(EntityManagerFactory emf){
+        this.emf = emf;
     }
 
     /**
@@ -109,62 +140,70 @@ public class DistanceProxyService {
         sb.append("origins=").append(leaderLat).append(",").append(leaderLng);
         // add destinations
         sb.append("&destinations=");
-        int count = 1;
-        for (int i = 0; i < dmr.getDestinations().size() + 1; i++) {
-            if (count % 10 != 0 && i < dmr.getDestinations().size()) {
-                LatLng latLng = dmr.getDestinations().get(i);
-                double memberLat = latLng.getJb();
-                double memberLng = latLng.getKb();
+        int count = 0;
+        List<LatLng> currentLatLng = new ArrayList<>();
+        for (int i = 0; i < dmr.getDestinations().size(); i++) {
+            LatLng latLng = dmr.getDestinations().get(i);
+            double memberLat = latLng.getJb();
+            double memberLng = latLng.getKb();
+            if(!currentLatLng.contains(latLng)){
                 // check if we already have destination
                 Response distance = getDistance(leaderLat, leaderLng, memberLat, memberLng);
                 if (distance.getStatus() == 404) {
                     count++;
                     sb.append(memberLat).append(",").append(memberLng);
                     sb.append("|");
+                    currentLatLng.add(latLng);
                 }
-            } else {
-                if (count > 1) {
-                    count = 1;
-                    // make request, then reset sb and start again
-                    // delete the trailing pipe character
-                    sb.deleteCharAt(sb.length() - 1);
-                    sb.append("&sensor=false&mode=walking&units=metric");
-                    // request url
-                    DistanceMatrixResponse response = runQuery(sb.toString());
-                    switch (response.getStatus()) {
-                        case "OK":
-                            logger.log(Level.INFO, "Successful query {0}", sb.toString());
-                            saveAddresses(response, dmr, leaderLat, leaderLng);
-                            break;
-                        case "OVER_QUERY_LIMIT":
-                            // need to deal with pause and run again
-                            logger.info(("Over query limit, sleeping 10 seconds"));
-                            try {
-                                while ("OVER_QUERY_LIMIT".equals(response.getStatus())) {
-                                    Thread.sleep(10000);
-                                    response = runQuery(sb.toString());
-                                    logger.log(Level.INFO, "Received {0}", response.getStatus());
+            }
+            // request distances in chunks of 10 address
+            if ((count > 0 && count % 10 == 0) || (i == dmr.getDestinations().size()-1 && count > 0)) {
+                count = 0;
+                // make request, then reset sb and start again
+                // delete the trailing pipe character
+                sb.deleteCharAt(sb.length() - 1);
+                sb.append("&sensor=false&mode=walking&units=metric");
+                // request url
+                DistanceMatrixResponse response = runQuery(sb.toString());
+                switch (response.getStatus()) {
+                    case "OK":
+                        logger.log(Level.INFO, "Successful query {0}", sb.toString());
+                        saveAddresses(response, leaderLat, leaderLng, currentLatLng);
+                        break;
+                    case "OVER_QUERY_LIMIT":
+                        // need to deal with pause and run again
+                        logger.warning(("Over query limit, sleeping 10 seconds"));
+                        try {
+                            int limitCount =0;
+                            while ("OVER_QUERY_LIMIT".equals(response.getStatus())) {
+                                Thread.sleep(10000);
+                                response = runQuery(sb.toString());
+                                logger.log(Level.INFO, "Received {0}", response.getStatus());
+                                limitCount++;
+                                if(limitCount > 10){
+                                    throw new WebApplicationException("Google API limits exceed, try again tomorrow", Status.INTERNAL_SERVER_ERROR);
                                 }
-                                if ("OK".equals(response.getStatus())) {
-                                    logger.log(Level.INFO, "Successful query {0}", sb.toString());
-                                    saveAddresses(response, dmr, leaderLat, leaderLng);
-                                } else {
-                                    logger.log(Level.SEVERE, "Received response {0} for query {1}", new Object[]{response.getStatus(), sb.toString()});
-                                }
-                            } catch (InterruptedException ex) {
-                                logger.log(Level.SEVERE, null, ex);
                             }
-                            break;
-                        default:
-                            String[] args = {response.getStatus(), sb.toString()};
-                            logger.log(Level.SEVERE, "Received bad response {0} for query {1}", args);
-                            return Response.serverError().build();
-                    }
-                    // Setup string builder for next request set
-                    sb = new StringBuilder("http://maps.googleapis.com/maps/api/distancematrix/json?");
-                    sb.append("origins=").append(leaderLat).append(",").append(leaderLng);
-                    sb.append("&destinations=");
+                            if ("OK".equals(response.getStatus())) {
+                                logger.log(Level.INFO, "Successful query {0}", sb.toString());
+                                saveAddresses(response, leaderLat, leaderLng, currentLatLng);
+                            } else {
+                                logger.log(Level.SEVERE, "Received response {0} for query {1}", new Object[]{response.getStatus(), sb.toString()});
+                            }
+                        } catch (InterruptedException ex) {
+                            logger.log(Level.SEVERE, null, ex);
+                        }
+                        break;
+                    default:
+                        String[] args = {response.getStatus(), sb.toString()};
+                        logger.log(Level.SEVERE, "Received bad response {0} for query {1}", args);
+                        return Response.serverError().build();
                 }
+                // Setup string builder for next request set
+                sb = new StringBuilder("http://maps.googleapis.com/maps/api/distancematrix/json?");
+                sb.append("origins=").append(leaderLat).append(",").append(leaderLng);
+                sb.append("&destinations=");
+                currentLatLng.clear();
             }
         }
         return Response.ok().build();
@@ -172,8 +211,8 @@ public class DistanceProxyService {
 
     private DistanceMatrixResponse runQuery(String s) {
         try {
-            URL url = new URL(s);
-            try (InputStream is = url.openStream()) {
+            urlProvider.setURL(s);
+            try (InputStream is = urlProvider.openStream()) {
                 // convert back to DistanceMatrixResponse
                 ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY);
                 mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -181,7 +220,7 @@ public class DistanceProxyService {
                 return response;
             }
         } catch (IOException ex) {
-            logger.log(Level.SEVERE, "Bad URL for distance matrix", ex);
+            logger.log(Level.SEVERE, "Unable to stream data from google", ex);
             return null;
         }
     }
@@ -190,12 +229,13 @@ public class DistanceProxyService {
     @Path("assignmembers")
     @Produces(MediaType.TEXT_HTML)
     public Response computeMembers() {
+        EntityManager em = emf.createEntityManager();
+        em.getTransaction().begin();
+        ensureAllMembersHaveDistancetoLeaders(em);
         // query distance table
         // select each member and order distance by closest leader
         // need to load leaders
         // need to load members, ingnore members who are leaders on non-auto
-        EntityManager em = emf.createEntityManager();
-        em.getTransaction().begin();
         TypedQuery<MemberJpa> query = em.createNamedQuery("Member.all", MemberJpa.class);
         List<MemberJpa> memberList = query.getResultList();
         TypedQuery<DistrictJpa> distanceQuery = em.createNamedQuery("District.all", DistrictJpa.class);
@@ -209,8 +249,12 @@ public class DistanceProxyService {
                 toLngs.add(leader.getLng());
             }
         }
-        StringBuilder sb = new StringBuilder("<html><body><table><tr><th>From</th><th>Address</th><th>To</th><th>Distance</th></tr>");
         for (MemberJpa memberJpa : memberList) {
+            if(!memberJpa.isAuto()){
+                // member is not set for auto assignment, skip them
+                continue;
+            }
+
             TypedQuery<DistanceJpa> distQuery = em.createNamedQuery("Distance.byClosest", DistanceJpa.class);
             distQuery.setParameter("memberLat", memberJpa.getLat());
             distQuery.setParameter("memberLng", memberJpa.getLng());
@@ -218,16 +262,6 @@ public class DistanceProxyService {
             distQuery.setParameter("leaderLatList", toLats);
             distQuery.setParameter("leaderLngList", toLngs);
             List<DistanceJpa> list = distQuery.getResultList();
-            for (DistanceJpa distanceJpa : list) {
-                sb.append("<tr><td>");
-                sb.append(memberJpa.getHousehold());
-                sb.append("</td><td>");
-                sb.append(memberJpa.getAddress());
-                sb.append("</td><td>");
-                sb.append(getLeaderNameAt(distanceJpa, districtList));
-                sb.append("</td><td>").append(distanceJpa.getDistance());
-                sb.append("</td></tr>");
-            }
             if (list.size() > 0) {
                 // assign member to first district found
                 DistanceJpa dist = list.get(0);
@@ -235,38 +269,23 @@ public class DistanceProxyService {
                 em.persist(memberJpa);
             }
         }
-        sb.append("</table></body></html>");
         em.getTransaction().commit();
         em.close();
-        return Response.ok().entity(sb.toString()).build();
+        return Response.ok().build();
     }
 
-    private void saveDistance(double fromLat, double fromLng, double toLat, double toLng, int value) {
+    private void saveDistance(double leaderLat, double leaderLng, LatLng memberLatLng, int value) {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
         DistanceJpa dist = new DistanceJpa();
-        dist.setLeaderLng(fromLng);
-        dist.setLeaderLat(fromLat);
-        dist.setMemberLat(toLat);
-        dist.setMemberLng(toLng);
+        dist.setLeaderLng(leaderLng);
+        dist.setLeaderLat(leaderLat);
+        dist.setMemberLat(memberLatLng.getJb());
+        dist.setMemberLng(memberLatLng.getKb());
         dist.setDistance(value);
         em.persist(dist);
+        logger.log(Level.FINE, "Saving distance {0}", dist);
         em.getTransaction().commit();
-    }
-
-    private String getLeaderNameAt(DistanceJpa distanceJpa, List<DistrictJpa> list) {
-        String name = null;
-        for (DistrictJpa d : list) {
-            Member leader = d.getLeader();
-            if (leader == null) {
-                continue;
-            }
-            if (leader.getLat() == distanceJpa.getLeaderLat() && leader.getLng() == distanceJpa.getLeaderLng()) {
-                name = d.getLeader().getHousehold();
-                break;
-            }
-        }
-        return name;
     }
 
     private int getDistrictId(DistanceJpa distanceJpa, List<DistrictJpa> list) {
@@ -285,16 +304,50 @@ public class DistanceProxyService {
 
     }
 
-    private void saveAddresses(DistanceMatrixResponse response, DistrictMatrixRequest dmr, double leaderLat, double leaderLng) {
+    private void saveAddresses(DistanceMatrixResponse response, double leaderLat, double leaderLng, List<LatLng> members) {
         List<Row> rows = response.getRows();
-        Row row = rows.get(0);
-        List<Element> elements = row.getElements();
-        List<LatLng> destinations = dmr.getDestinations();
-        for (int j = 0; j < elements.size(); j++) {
-            LatLng latLng = destinations.get(j);
-            // save address in db
-            Element element = elements.get(j);
-            saveDistance(leaderLat, leaderLng, latLng.getJb(), latLng.getKb(), element.getDistance().getValue());
+        for (int i = 0; i < rows.size(); i++) {
+            Row row = rows.get(i);
+            List<Element> elements = row.getElements();
+            // can not trust the address sent back from google, may change.
+            // instead lookup from member table by lat lng
+            for (int j = 0; j < elements.size(); j++) {
+                Element element = elements.get(j);
+                // save address in db
+                saveDistance(leaderLat, leaderLng, members.get(j), element.getDistance().getValue());
+            }
+        }
+    }
+
+    private void ensureAllMembersHaveDistancetoLeaders(EntityManager em) {
+        // get members who don't have an entry in the distance table
+        TypedQuery<Member> query = em.createNamedQuery("Member.withoutDistance", Member.class);
+        List<Member> list = query.getResultList();
+        // get district leaders and
+        // compute distance to all these members from each leader
+        TypedQuery<DistrictJpa> districtQuery = em.createNamedQuery("District.all", DistrictJpa.class);
+        List<DistrictJpa> distList = districtQuery.getResultList();
+        for (DistrictJpa districtJpa : distList) {
+            Member leader = districtJpa.getLeader();
+            if(leader == null){
+                continue;
+            }
+            DistrictMatrixRequest dmr = new DistrictMatrixRequest();
+            LatLng leaderLatLng = new LatLng(leader.getLat(), leader.getLng());
+            dmr.getOrigins().add(leaderLatLng);
+            dmr.setTravelMode(DistrictMatrixRequest.WALKING);
+            dmr.setUnitSystem(DistrictMatrixRequest.METRIC);
+            List<LatLng> destinations = dmr.getDestinations();
+            for (Member member : list) {
+                if(member.isAuto() == false){
+                    continue;
+                }
+                LatLng memberLatLng = new LatLng(member.getLat(), member.getLng());
+                destinations.add(memberLatLng);
+            }
+            // get distances
+            logger.log(Level.FINE, "Getting distance for {0} MemberCount: {1}", new Object[]{leader.getHousehold(), destinations.size()});
+            getDistanceMatrix(dmr);
         }
     }
 }

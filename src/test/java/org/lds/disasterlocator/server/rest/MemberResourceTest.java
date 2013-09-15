@@ -104,4 +104,16 @@ public class MemberResourceTest {
         response = memberResource.createMember(json);
         assertEquals(409, response.getStatus());
     }
+
+    @Test
+    public void testMissingMember() {
+        Response response = memberResource.getMember("missing");
+        assertEquals(404, response.getStatus());
+        MemberJpa missingMember = new MemberJpa();
+        missingMember.setHousehold("missing");
+        response = memberResource.updateMember(missingMember);
+        assertEquals(404, response.getStatus());
+        memberResource.deleteMember("missing");
+        assertEquals(404, response.getStatus());
+    }
 }
