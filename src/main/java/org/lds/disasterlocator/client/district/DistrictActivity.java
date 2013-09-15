@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.lds.disasterlocator.client.load;
+package org.lds.disasterlocator.client.district;
 
 import com.google.gwt.activity.shared.AbstractActivity;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.place.shared.Place;
 import com.google.gwt.user.client.ui.AcceptsOneWidget;
-import com.google.gwt.user.client.ui.IsWidget;
 import com.google.web.bindery.autobean.shared.AutoBeanFactory;
 import org.lds.disasterlocator.client.ClientFactory;
 
@@ -27,19 +26,19 @@ import org.lds.disasterlocator.client.ClientFactory;
  *
  * @author Bert W Summers
  */
-public class LoadActivity extends AbstractActivity implements LoadView.Activity{
+public class DistrictActivity extends AbstractActivity implements DistrictView.Activity{
     private final ClientFactory clientFactory;
-    private final LoadView view;
+    private final DistrictView view;
 
-    public LoadActivity(ClientFactory factory){
+    public DistrictActivity(ClientFactory factory){
         clientFactory = factory;
-        this.view = clientFactory.getLoadView();
+        this.view = clientFactory.getDistrictView();
     }
 
     @Override
     public void start(AcceptsOneWidget panel, EventBus eventBus) {
         view.setActivity(this);
-        panel.setWidget((IsWidget) view);
+        panel.setWidget(view);
     }
 
     @Override

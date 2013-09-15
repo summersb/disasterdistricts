@@ -20,6 +20,8 @@ import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.event.shared.SimpleEventBus;
 import com.google.gwt.place.shared.PlaceController;
 import com.google.web.bindery.autobean.shared.AutoBeanFactory;
+import org.lds.disasterlocator.client.district.DistrictView;
+import org.lds.disasterlocator.client.district.DistrictViewImpl;
 import org.lds.disasterlocator.client.load.LoadView;
 import org.lds.disasterlocator.client.load.LoadViewImpl;
 import org.lds.disasterlocator.client.map.MapView;
@@ -36,6 +38,7 @@ public class ClientFactoryImpl implements ClientFactory{
     private final PlaceController placeController = new PlaceController(eventBus);
     private final MapView mapView = new MapViewImpl();
     private final LoadView loadView = new LoadViewImpl();
+    private final DistrictView districtView = new DistrictViewImpl();
 
     @Override
     public EventBus getEventBus() {
@@ -60,5 +63,10 @@ public class ClientFactoryImpl implements ClientFactory{
     @Override
     public LoadView getLoadView() {
         return loadView;
+    }
+
+    @Override
+    public DistrictView getDistrictView() {
+        return districtView;
     }
 }
