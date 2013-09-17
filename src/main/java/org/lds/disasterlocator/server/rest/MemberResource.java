@@ -112,13 +112,18 @@ public class MemberResource {
     }
 
     @PUT
-    public Response updateMember(MemberJpa member){
+    public Response updateMember(String json){
+        MyAutoBeanFactory factory = AutoBeanFactorySource.create(MyAutoBeanFactory.class);
+        AutoBean<Member> memberAB = AutoBeanCodex.decode(factory, Member.class, json);
+        Member memberBean = memberAB.as();
+        MemberJpa member = new MemberJpa(memberBean);
         EntityManager em = emf.createEntityManager();
         MemberJpa find = em.find(MemberJpa.class, member.getHousehold());
         if (find != null) {
             em.getTransaction().begin();
             em.merge(member);
             em.getTransaction().commit();
+            em.close();
         } else {
             return Response.status(Status.NOT_FOUND).build();
         }

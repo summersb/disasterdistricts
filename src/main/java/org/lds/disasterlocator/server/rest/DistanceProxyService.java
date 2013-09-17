@@ -250,7 +250,7 @@ public class DistanceProxyService {
             }
         }
         for (MemberJpa memberJpa : memberList) {
-            if(!memberJpa.isAuto()){
+            if(!memberJpa.getAuto()){
                 // member is not set for auto assignment, skip them
                 continue;
             }
@@ -339,7 +339,7 @@ public class DistanceProxyService {
             dmr.setUnitSystem(DistrictMatrixRequest.METRIC);
             List<LatLng> destinations = dmr.getDestinations();
             for (Member member : list) {
-                if(member.isAuto() == false){
+                if(member.getAuto() == false){
                     continue;
                 }
                 LatLng memberLatLng = new LatLng(member.getLat(), member.getLng());
