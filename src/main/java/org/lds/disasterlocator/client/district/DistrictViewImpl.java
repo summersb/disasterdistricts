@@ -168,7 +168,7 @@ public class DistrictViewImpl extends Composite implements
         table.setVisible(false);
         map.setVisible(true);
         renderMap();
-        plotHouses(district.getSelectedIndex());
+        plotHouses(district.getSelectedIndex() + 1);
     }
 
     @Override
@@ -258,6 +258,52 @@ public class DistrictViewImpl extends Composite implements
         table.add(grid);
     }
 
+    private void fullTable(List<Member> list) {
+        Collections.sort(list, new HouseholdSort());
+
+        tableHeight = list.size();
+        tableWidth = 4;
+
+        grid = new Grid(tableHeight + 1, tableWidth);
+
+        Label label = new Label("District #");
+        grid.setWidget(0, 0, label);
+
+        label = new Label("Household");
+        grid.setWidget(0, 1, label);
+        
+        label = new Label("Address");
+        grid.setWidget(0, 2, label);
+        
+        label = new Label("Phone");
+        grid.setWidget(0, 3, label);
+
+        for (int i = 0; i < list.size(); i++) {
+            Member member = list.get(i);
+            String cell;
+            cell = String.valueOf(member.getDistrict());
+            label = new Label(cell);
+            grid.setWidget(i + 1, 0, label);
+
+            cell = member.getHousehold();
+            label = new Label(cell);
+            grid.setWidget(i + 1, 1, label);
+            
+            cell = member.getAddress();
+            label = new Label(cell);
+            grid.setWidget(i + 1, 2, label);
+            
+            cell = member.getPhone();
+            label = new Label(cell);
+            grid.setWidget(i + 1, 3, label);
+
+        }
+        table.setVisible(true);
+        table.clear();
+        table.add(grid);
+
+    }
+
     @Override
     public void renderMap() {
         MapOptions options = MapOptions.newInstance();
@@ -337,6 +383,9 @@ public class DistrictViewImpl extends Composite implements
 
     public void plotHouses(int id) {
         if (memberList != null && districtList != null) {
+            List<Member> list;
+            list = new ArrayList<Member>();
+            
             for (final Member member : memberList) {
                 LatLng center = LatLng.newInstance(member.getLat(), member.getLng());
                 MarkerOptions options = MarkerOptions.newInstance();
@@ -352,12 +401,12 @@ public class DistrictViewImpl extends Composite implements
                     }
                     options.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + color);
                 }
-                
+
                 if (member.getDistrict() == id) {
                     final Marker marker = Marker.newInstance(options);
                     marker.setMap(mapWidget);
                     markerSet.put(member.getHousehold(), marker);
-                    
+                    list.add(member);
                 }
 
                 //marker.addClickHandler(new MapViewImpl.MarkerHandler(marker, member));
@@ -370,6 +419,7 @@ public class DistrictViewImpl extends Composite implements
                     marker.setZindex(1000);
                 }
             }
+            fullTable(list);
         }
     }
 }

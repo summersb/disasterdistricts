@@ -99,7 +99,7 @@ public class MapViewImpl extends Composite implements MapView {
     @Override
     public void renderMap() {
         MapOptions options = MapOptions.newInstance();
-        options.setZoom(12);
+        options.setZoom(13);
         options.setMapTypeId(MapTypeId.ROADMAP);
 
         mapWidget = new MapWidget(options);
