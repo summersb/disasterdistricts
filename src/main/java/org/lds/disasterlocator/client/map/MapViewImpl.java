@@ -72,12 +72,18 @@ public class MapViewImpl extends Composite implements MapView {
 
     private static final Logger logger = Logger.getLogger(MapViewImpl.class.getName());
     private static MapUiBinder uiBinder = GWT.create(MapUiBinder.class);
-    @UiField HTMLPanel map;
-    @UiField HTMLPanel topMenu;
-    @UiField Button load;
-    @UiField Button compute;
-    @UiField CheckBox districtCircle;
-    @UiField Button district;
+    @UiField
+    HTMLPanel map;
+    @UiField
+    HTMLPanel topMenu;
+    @UiField
+    Button load;
+    @UiField
+    Button compute;
+    @UiField
+    CheckBox districtCircle;
+    @UiField
+    Button reports;
     private Activity activity;
     private List<Member> memberList;
     private List<District> districtList;
@@ -148,7 +154,7 @@ public class MapViewImpl extends Composite implements MapView {
         Set<String> keySet = markerSet.keySet();
         for (String key : keySet) {
             Marker m = markerSet.get(key);
-            m.setMap((MapWidget)null);
+            m.setMap((MapWidget) null);
         }
         markerSet.clear();
     }
@@ -170,8 +176,7 @@ public class MapViewImpl extends Composite implements MapView {
         }
         VerticalPanel vert = new VerticalPanel();
 
-        for(final Member member: getMembersAtLocation(memberIn))
-        {
+        for (final Member member : getMembersAtLocation(memberIn)) {
             HTML html = new HTML("<b>" + member.getHousehold() + "</b>");
             vert.add(html);
             String[] tokens = member.getAddress().split("[,]");
@@ -218,12 +223,11 @@ public class MapViewImpl extends Composite implements MapView {
             }
             // find the right district to mark as selected
             for (int i = 0; i < lb.getItemCount(); i++) {
-                if(lb.getValue(i).equals(Integer.toString(member.getDistrict()))){
+                if (lb.getValue(i).equals(Integer.toString(member.getDistrict()))) {
                     lb.setSelectedIndex(i);
                 }
             }
             lb.addChangeHandler(new ChangeHandler() {
-
                 @Override
                 public void onChange(ChangeEvent event) {
                     int id = Integer.parseInt(lb.getValue(lb.getSelectedIndex()));
@@ -286,15 +290,15 @@ public class MapViewImpl extends Composite implements MapView {
     }
 
     @Override
-    public void setDistricts(List<District> list){
+    public void setDistricts(List<District> list) {
         districtList = list;
         plotHouses();
     }
 
-    private boolean isLeader(String household){
-        if(districtList != null){
+    private boolean isLeader(String household) {
+        if (districtList != null) {
             for (District district : districtList) {
-                if(district.getLeader().getHousehold().equals(household)){
+                if (district.getLeader().getHousehold().equals(household)) {
                     return true;
                 }
             }
@@ -342,8 +346,8 @@ public class MapViewImpl extends Composite implements MapView {
         double range = 0.0005;
         List<Member> members = new ArrayList<Member>();
         for (Member member : memberList) {
-            if(member.getLat() > lat-range && member.getLat() < lat+range &&
-                    member.getLng() > lng-range && member.getLng() < lng+range){
+            if (member.getLat() > lat - range && member.getLat() < lat + range
+                    && member.getLng() > lng - range && member.getLng() < lng + range) {
                 members.add(member);
             }
         }
@@ -359,18 +363,18 @@ public class MapViewImpl extends Composite implements MapView {
     public void computeMembers(ClickEvent event) {
         activity.computeDistrictMembers();
     }
-    
-    @UiHandler("district")
-    public void district(ClickEvent event) {
+
+    @UiHandler("reports")
+    public void reports(ClickEvent event) {
         activity.goTo(new DistrictPlace("lists"));
-    }    
+    }
 
     @UiHandler("districtCircle")
-    public void showCircles(ClickEvent event){
-        if(districtCircle.getValue()){
+    public void showCircles(ClickEvent event) {
+        if (districtCircle.getValue()) {
             for (District district : districtList) {
                 Member leader = district.getLeader();
-                if(leader != null){
+                if (leader != null) {
                     CircleOptions circleOptions = CircleOptions.newInstance();
                     LatLng latLng = LatLng.newInstance(leader.getLat(), leader.getLng());
                     circleOptions.setCenter(latLng);
@@ -387,7 +391,7 @@ public class MapViewImpl extends Composite implements MapView {
             // for each district get leader lat lng
             // create circle
             // add circle to list to erase later
-        }else{
+        } else {
             // else remove circles
             for (Circle circle : districtCircleList) {
                 circle.setMap(null);

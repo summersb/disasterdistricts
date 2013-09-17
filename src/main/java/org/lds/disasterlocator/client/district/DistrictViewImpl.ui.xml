@@ -22,34 +22,17 @@ Uncomment this for XHTML entities
 <ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
              xmlns:g="urn:import:com.google.gwt.user.client.ui">
     <ui:style>
+        .mapPanel {width: 100; height: 50;}
     </ui:style>
     <ui:with field='res' type='org.lds.disasterlocator.client.MyResources'/>
 
     <g:HTMLPanel ui:field="panel" styleName="{res.style.panel}">
-        <g:Button ui:field="map">Go to map</g:Button>
+        <g:Button ui:field="back">Go to map</g:Button>
         <g:Button ui:field="leaders">Leaders</g:Button>
-        <g:Button ui:field="process" visible="false">Process File</g:Button>
-
-        <g:HTMLPanel ui:field="legend" visible="false">
-            <g:Grid ui:field="legendGrid">
-                <g:row>
-                    <g:cell>Legend</g:cell>
-                    <g:cell>Progress:</g:cell>
-                </g:row>
-                <g:row styleName="{res.style.duplicate}">
-                    <g:cell>Duplicate Member found</g:cell>
-                    <g:cell>Remaining Records</g:cell>
-                </g:row>
-                <g:row styleName="{res.style.multipleAddress}">
-                    <g:cell>Multiple Address Found</g:cell>
-                </g:row>
-                <g:row styleName="{res.style.badAddress}">
-                    <g:cell>Address could not be resolved</g:cell>
-                </g:row>
-                <g:row styleName="{res.style.failed}">
-                    <g:cell>Failed to process</g:cell>
-                </g:row>
-            </g:Grid>
+        <g:Button ui:field="alphabetic">Alphabetic</g:Button>
+        <g:ListBox ui:field="district"></g:ListBox>
+        <g:HTMLPanel ui:field="map" styleName="{style.mapPanel}" visible="false">
+            <g:Label>Loadin map api</g:Label>
         </g:HTMLPanel>
         <g:HTMLPanel ui:field="table"></g:HTMLPanel>
     </g:HTMLPanel>

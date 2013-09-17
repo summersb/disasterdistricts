@@ -15,18 +15,29 @@
  */
 package org.lds.disasterlocator.client.district;
 
+import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.geolocation.client.Geolocation;
+import com.google.gwt.geolocation.client.Position;
+import com.google.gwt.geolocation.client.PositionError;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
+import com.google.gwt.maps.client.MapOptions;
+import com.google.gwt.maps.client.MapTypeId;
+import com.google.gwt.maps.client.MapWidget;
 import com.google.gwt.maps.client.base.LatLng;
+import com.google.gwt.maps.client.events.resize.ResizeMapEvent;
+import com.google.gwt.maps.client.events.resize.ResizeMapHandler;
+import com.google.gwt.maps.client.overlays.Marker;
+import com.google.gwt.maps.client.overlays.MarkerOptions;
 import com.google.gwt.maps.client.services.Geocoder;
 import com.google.gwt.maps.client.services.GeocoderGeometry;
 import com.google.gwt.maps.client.services.GeocoderRequest;
@@ -46,6 +57,7 @@ import com.google.gwt.user.client.ui.FormPanel;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HTMLPanel;
+import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.RadioButton;
 import com.google.gwt.user.client.ui.TextBox;
@@ -56,13 +68,20 @@ import com.google.web.bindery.autobean.shared.AutoBeanCodex;
 import com.google.web.bindery.autobean.shared.AutoBeanFactory;
 import com.google.web.bindery.event.shared.HandlerRegistration;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lds.disasterlocator.client.MyResources;
 import org.lds.disasterlocator.client.map.MapPlace;
+import org.lds.disasterlocator.client.map.MapViewImpl;
+import org.lds.disasterlocator.shared.District;
 import org.lds.disasterlocator.shared.File;
 import org.lds.disasterlocator.shared.Member;
 import org.lds.disasterlocator.shared.MyConstants;
@@ -80,26 +99,30 @@ public class DistrictViewImpl extends Composite implements
     @UiField
     HTMLPanel panel;
     @UiField
-    Button leaders;    
+    Button back;
     @UiField
-    Button map;
+    Button leaders;
+    @UiField
+    Button alphabetic;
     @UiField
     HTMLPanel table;
     @UiField
-    Button process;
-    @UiField
-    HTMLPanel legend;
-    @UiField
     MyResources res;
     @UiField
+    ListBox district;
+    @UiField
+    HTMLPanel map;
     Grid legendGrid;
     private Activity activity;
-    private List<ListBox> listBoxList = new ArrayList<ListBox>();
     private int tableHeight;
     private int tableWidth;
+    private List<Member> memberList;
+    private List<District> districtList;
     private Grid grid;
-    private int household = -1, address = -1, city = -1, state = -1, zip = -1, phone = -1, email = -1;
-    private List<HandlerRegistration> addressHandlers = new ArrayList<HandlerRegistration>();
+    private MapWidget mapWidget;
+    private Map<String, Marker> markerSet = new HashMap<String, Marker>();
+    private static final String LEADER_COLOR = "L|00ff00|000000";
+    private static final String MEMBER_COLOR = "|FF0000|000000";
 
     public DistrictViewImpl() {
         initWidget(uiBinder.createAndBindUi(this));
@@ -109,22 +132,6 @@ public class DistrictViewImpl extends Composite implements
     @Override
     public void setActivity(Activity activity) {
         this.activity = activity;
-    }
-
-    private ListBox createList() {
-        // add heading row to select which column is what
-        ListBox lb = new ListBox(false);
-        lb.addItem("None");
-        lb.addItem("Household (unique)");
-        lb.addItem("Address");
-        lb.addItem("City");
-        lb.addItem("State");
-        lb.addItem("Zip Code");
-        lb.addItem("E-Mail");
-        lb.addItem("Phone");
-        lb.addChangeHandler(new ListBoxChangeHandler(this));
-        listBoxList.add(lb);
-        return lb;
     }
 
     private String getTextBoxValue(int row, int household) {
@@ -141,347 +148,228 @@ public class DistrictViewImpl extends Composite implements
     interface MapUiBinder extends UiBinder<Widget, DistrictViewImpl> {
     }
 
-    @UiHandler("map")
+    @UiHandler("back")
     public void loadMap(ClickEvent event) {
         activity.goTo(new MapPlace("map"));
     }
 
-    /**
-     * This method assumes that at least household and address have been
-     * selected
-     *
-     * @param event
-     */
-    @UiHandler("process")
-    public void processFile(ClickEvent event) {
-        process.setEnabled(false);
-        // remove any prior handlers
-        for (HandlerRegistration handlerRegistration : addressHandlers) {
-            handlerRegistration.removeHandler();
-        }
-        addressHandlers.clear();
-        final Button localProcessReference = process;
-        for (int i = 0; i < listBoxList.size(); i++) {
-            ListBox listBox = listBoxList.get(i);
-            int index = listBox.getSelectedIndex();
-            if (index == 1) {
-                household = i;
-            } else if (index == 2) {
-                address = i;
-            } else if (index == 3) {
-                city = i;
-            } else if (index == 4) {
-                state = i;
-            } else if (index == 5) {
-                zip = i;
-            } else if (index == 7) {
-                phone = i;
-            } else if (index == 6) {
-                email = i;
-            }
-        }
-        if (household > -1 && address > -1) {
-            // geocode address row by row
-            AutoBeanFactory factory = activity.getAutoBeanFactory();
+    @UiHandler("leaders")
+    public void leaders(ClickEvent event) {
+        leaderTable();
+    }
 
-            // create a queue to process addresses
-            Queue<Member> queue = new LinkedList<Member>();
-            for (int row = 1; row <= tableHeight; row++) {
-                AutoBean<Member> memberAB = factory.create(Member.class);
-                final Member member = memberAB.as();
-                TextBox tb = (TextBox) grid.getWidget(row, household);
-                if (tb == null) {
-                    // must have been a blank line in the source file
-                    grid.removeRow(row);
-                    row--;
-                    continue;
-                }
-                member.setHousehold(getTextBoxValue(row, household));
-                member.setAddress(getTextBoxValue(row, address));
-                member.setCity(getTextBoxValue(row, city));
-                member.setState(getTextBoxValue(row, state));
-                member.setZip(getTextBoxValue(row, zip));
-                member.setEmail(getTextBoxValue(row, email));
-                member.setPhone(getTextBoxValue(row, phone));
+    @UiHandler("alphabetic")
+    public void alpha(ClickEvent event) {
+        alphaTable();
+    }
 
-                queue.add(member);
-            }
-            // process queue, on query over limit create a timer to delay processing
-            // remove failed address from queue
-            GeocoderRequestHandler grh = new MyGeoRequestHandler(queue, grid, new CallBack() {
-                @Override
-                public void complete() {
-                    // now we can remove grey rows from table
-                    logger.info("Finished list");
-                    // ask user to fix errors
-                    if (grid.getRowCount() > 1) {
-                        Window.alert("Correct errors and process the corrected addresses again.");
-                    }
-                    localProcessReference.setEnabled(true);
-                    tableHeight = grid.getRowCount() - 1;
-                }
-            }, this);
-        } else {
-            Window.alert("You must select at least household and address to continue");
-            process.setEnabled(true);
+    @UiHandler("district")
+    public void district(ClickEvent event) {
+        table.setVisible(false);
+        map.setVisible(true);
+        renderMap();
+        plotHouses(district.getSelectedIndex());
+    }
+
+    @Override
+    public void setDistricts(List<District> list) {
+        districtList = list;
+        district.clear();
+        for (District item : districtList) {
+            district.addItem("District " + String.valueOf(item.getId()));
         }
     }
 
-    private void createTable(String data) {
-        AutoBeanFactory factory = activity.getAutoBeanFactory();
-        AutoBean<File> fileAB = AutoBeanCodex.decode(factory, File.class, data);
-        File file = fileAB.as();
+    @Override
+    public void setMembers(List<Member> members) {
+        memberList = members;
+    }
 
-        tableHeight = file.getRows().size();
-        tableWidth = file.getRows().get(0).getCells().size();
+    private void leaderTable() {
+        tableHeight = districtList.size();
+        tableWidth = 2;
 
-        List<Row> rows = file.getRows();
         grid = new Grid(tableHeight + 1, tableWidth);
-        for (int i = 0; i < rows.size(); i++) {
-            Row row = rows.get(i);
-            List<String> cells = row.getCells();
-            for (int column = 0; column < cells.size(); column++) {
-                String cell = cells.get(column);
-                cell = cell.replace("&amp;", "&");
-                TextBox textBox = new TextBox();
-                textBox.setText(cell);
-                grid.setWidget(i + 1, column, textBox);
-            }
+
+        Label label = new Label("District #");
+        grid.setWidget(0, 0, label);
+
+        label = new Label("Leader");
+        grid.setWidget(0, 1, label);
+
+        for (int i = 0; i < districtList.size(); i++) {
+            District district = districtList.get(i);
+            String cell;
+            cell = String.valueOf(district.getId());
+            label = new Label(cell);
+            grid.setWidget(i + 1, 0, label);
+
+            cell = district.getLeader().getHousehold();
+            label = new Label(cell);
+            grid.setWidget(i + 1, 1, label);
+
         }
-        listBoxList.clear();
-        for (int i = 0; i < tableWidth; i++) {
-            grid.setWidget(0, i, createList());
-        }
+        map.setVisible(false);
+        table.setVisible(true);
+        table.clear();
         table.add(grid);
     }
 
-    private static class ListBoxChangeHandler implements ChangeHandler {
-
-        private final DistrictViewImpl page;
-
-        public ListBoxChangeHandler(DistrictViewImpl page) {
-            this.page = page;
-        }
+    class HouseholdSort implements Comparator<Member> {
 
         @Override
-        public void onChange(ChangeEvent event) {
-            // check that no other list has this item selected
-            // if so then unselect it
-            ListBox source = (ListBox) event.getSource();
-            int selectedIndex = source.getSelectedIndex();
-            for (ListBox lb : page.listBoxList) {
-                if (lb.equals(source)) {
-                    continue;
+        public int compare(Member o1, Member o2) {
+            String name1 = o1.getHousehold();
+            String name2 = o2.getHousehold();
+            return name1.compareTo(name2);
+        }
+    }
+
+    private void alphaTable() {
+
+        Collections.sort(memberList, new HouseholdSort());
+
+        tableHeight = memberList.size();
+        tableWidth = 2;
+
+        grid = new Grid(tableHeight + 1, tableWidth);
+
+        Label label = new Label("District #");
+        grid.setWidget(0, 0, label);
+
+        label = new Label("Household");
+        grid.setWidget(0, 1, label);
+
+        for (int i = 0; i < memberList.size(); i++) {
+            Member member = memberList.get(i);
+            String cell;
+            cell = String.valueOf(member.getDistrict());
+            label = new Label(cell);
+            grid.setWidget(i + 1, 0, label);
+
+            cell = member.getHousehold();
+            label = new Label(cell);
+            grid.setWidget(i + 1, 1, label);
+
+        }
+        map.setVisible(false);
+        table.setVisible(true);
+        table.clear();
+        table.add(grid);
+    }
+
+    @Override
+    public void renderMap() {
+        MapOptions options = MapOptions.newInstance();
+        options.setZoom(12);
+        options.setMapTypeId(MapTypeId.ROADMAP);
+
+        mapWidget = new MapWidget(options);
+        map.clear();
+        map.add(mapWidget);
+
+        mapWidget.addResizeHandler(new ResizeMapHandler() {
+            @Override
+            public void onEvent(ResizeMapEvent event) {
+                mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
+            }
+        });
+
+        mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
+
+        Geolocation geolocation = Geolocation.getIfSupported();
+        geolocation.getCurrentPosition(new Callback<Position, PositionError>() {
+            @Override
+            public void onSuccess(Position result) {
+                centerOn(result.getCoordinates());
+            }
+
+            @Override
+            public void onFailure(PositionError reason) {
+                Window.alert(reason.getMessage());
+            }
+        });
+
+    }
+
+    private void centerOn(Position.Coordinates coordinates) {
+        double latitude = coordinates.getLatitude();
+        double longitude = coordinates.getLongitude();
+        LatLng center = LatLng.newInstance(latitude, longitude);
+        mapWidget.setCenter(center);
+
+    }
+
+    private boolean isLeader(String household) {
+        if (districtList != null) {
+            for (District district : districtList) {
+                if (district.getLeader().getHousehold().equals(household)) {
+                    return true;
                 }
-                if (selectedIndex == lb.getSelectedIndex()) {
-                    lb.setSelectedIndex(0);
+            }
+        }
+        return false;
+    }
+
+    private String getDistrict(Member member) {
+        int district;
+        String result;
+        district = member.getDistrict();
+        if (district < 0) {
+            result = "unassigned";
+        } else {
+            result = String.valueOf(member.getDistrict());
+        }
+        return result;
+    }
+
+    private String rollOver(Member member) {
+        String rollover;
+        String[] tokens;
+        rollover = member.getHousehold();
+        rollover += "\n";
+        tokens = member.getAddress().split("[,]");
+        rollover += tokens[0];
+        rollover += "\n";
+        rollover += "District: " + getDistrict(member);
+        return rollover;
+    }
+
+    public void plotHouses(int id) {
+        if (memberList != null && districtList != null) {
+            for (final Member member : memberList) {
+                LatLng center = LatLng.newInstance(member.getLat(), member.getLng());
+                MarkerOptions options = MarkerOptions.newInstance();
+                options.setPosition(center);
+                options.setTitle(rollOver(member));
+                if (member.getDistrict() != 0) {
+                    // we can set district colors here also
+                    String color = member.getDistrict() + MEMBER_COLOR;
+                    if (isLeader(member.getHousehold())) {
+                        color = LEADER_COLOR;
+                        options.setZindex(1000);
+                        mapWidget.setCenter(center);
+                    }
+                    options.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + color);
+                }
+                
+                if (member.getDistrict() == id) {
+                    final Marker marker = Marker.newInstance(options);
+                    marker.setMap(mapWidget);
+                    markerSet.put(member.getHousehold(), marker);
+                    
+                }
+
+                //marker.addClickHandler(new MapViewImpl.MarkerHandler(marker, member));
+            }
+            Set<String> memberHousehold = markerSet.keySet();
+            for (String household : memberHousehold) {
+                if (isLeader(household)) {
+                    Marker marker = markerSet.get(household);
+                    marker.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + LEADER_COLOR);
+                    marker.setZindex(1000);
                 }
             }
         }
     }
-
-    class MyGeoRequestHandler implements GeocoderRequestHandler, RestCallBack {
-
-        private Member member;
-        private final Grid grid;
-        private final Queue<Member> queue;
-        private final CallBack callback;
-        private int row = 1; // row 0 is listbox row
-        private final AutoBeanFactory factory;
-
-        public MyGeoRequestHandler(Queue<Member> queue, Grid grid, CallBack callback, DistrictViewImpl page) {
-            this.queue = queue;
-            this.grid = grid;
-            this.callback = callback;
-            factory = page.activity.getAutoBeanFactory();
-            processMember();
-        }
-
-        @Override
-        public void onCallback(JsArray<GeocoderResult> results, GeocoderStatus status) {
-            if (status.toString().equals("OK")) {
-                if (results.length() != 1) {
-                    logger.severe("Incorrect results for address " + member.getHousehold() + ":" + member.getAddress());
-                    grid.getRowFormatter().setStyleName(row, res.style().multipleAddress());
-                    // when the user clicks on the field show a popup to select one of the address
-                    // still allow user to modify the address
-                    final List<String> addresses = new ArrayList<String>();
-                    for (int i = 0; i < results.length(); i++) {
-                        GeocoderResult geocoderResult = results.get(i);
-                        addresses.add(geocoderResult.getFormatted_Address());
-                    }
-                    final TextBox tb = (TextBox) grid.getWidget(row, DistrictViewImpl.this.address);
-                    addressHandlers.add(tb.addClickHandler(new MultiAddressHandler(addresses, tb)));
-                    row++;
-                    end();
-                    // error. to many results need to clarify address
-                } else {
-                    GeocoderResult gr = results.get(0);
-                    GeocoderGeometry geometry = gr.getGeometry();
-                    LatLng location = geometry.getLocation();
-                    member.setAddress(gr.getFormatted_Address());
-                    member.setLat(location.getLatitude());
-                    member.setLng(location.getLongitude());
-                    // when geocode is complete send row to server with lat/long to insert record
-                    AutoBean<Member> memberAB = factory.create(Member.class, member);
-                    String json = AutoBeanCodex.encode(memberAB).getPayload();
-                    try {
-                        RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, MyConstants.REST_URL + "member");
-                        rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
-                        rb.sendRequest(json, new MyRequestCallbackHandler(this));
-                    } catch (RequestException ex) {
-                        logger.log(Level.SEVERE, "Failed to persist member" + member.getHousehold() + ":" + member.getAddress(), ex);
-                        grid.getRowFormatter().setStyleName(row, res.style().failed());
-                        row++;
-                        end();
-                    }
-                }
-            } else if ("OVER_QUERY_LIMIT".equals(status.toString())) {
-                // need to delay here
-                logger.info("Over query limit, pausing for 10 seconds");
-                Timer t = new Timer() {
-                    @Override
-                    public void run() {
-                        processMember();
-                    }
-                };
-                t.schedule(10000);
-            } else {
-                logger.severe("Failed to process " + status.toString() + " for " + member.getHousehold() + ":" + member.getAddress());
-                grid.getRowFormatter().setStyleName(row, res.style().badAddress());
-                row++;
-                end();
-            }
-        }
-
-        private void processMember() {
-            this.member = queue.peek();
-            if (member == null) {
-                callback.complete();
-            } else {
-                Geocoder geocoder = Geocoder.newInstance();
-                GeocoderRequest geoRequest = GeocoderRequest.newInstance();
-                geoRequest.setAddress(member.getAddress());
-                geocoder.geocode(geoRequest, this);
-            }
-        }
-
-        private void end() {
-            legendGrid.setText(1, 1, "Progress: " + queue.size() + " records remaining");
-            queue.remove();
-            processMember();
-        }
-
-        @Override
-        public void success() {
-            grid.removeRow(row);
-            logger.info("Process " + member.getHousehold() + ":" + member.getAddress());
-            end();
-        }
-
-        @Override
-        public void failure() {
-            logger.info("Failed to process " + member.getHousehold() + ":" + member.getAddress());
-            grid.getRowFormatter().setStyleName(row, res.style().duplicate());
-            row++;
-            end();
-        }
-    }
-
-    static class MyRequestCallbackHandler implements RequestCallback {
-
-        private final RestCallBack callback;
-
-        MyRequestCallbackHandler(RestCallBack callback) {
-            this.callback = callback;
-        }
-
-        @Override
-        public void onResponseReceived(Request request, Response response) {
-            if (response.getStatusCode() == MyConstants.OK) {
-                callback.success();
-            } else {
-                logger.info("Failed from persist call with code " + response.getStatusCode());
-                callback.failure();
-            }
-        }
-
-        @Override
-        public void onError(Request request, Throwable exception) {
-            callback.failure();
-        }
-    }
-
-    static class MultiAddressHandler implements ClickHandler {
-
-        private List<String> addresses;
-        private TextBox tb;
-
-        MultiAddressHandler(List<String> addresses, TextBox tb) {
-            this.addresses = addresses;
-            this.tb = tb;
-        }
-
-        @Override
-        public void onClick(ClickEvent event) {
-            // show a popup to select an address
-            Widget source = (Widget) event.getSource();
-            int left = source.getAbsoluteLeft() + 10;
-            int top = source.getAbsoluteTop() + 10;
-            final DecoratedPopupPanel simplePopup = new DecoratedPopupPanel(true);
-            simplePopup.ensureDebugId("cwBasicPopup-simplePopup");
-            simplePopup.setWidth("400px");
-            VerticalPanel vp = new VerticalPanel();
-            vp.add(new HTML("Select a valid address"));
-            final List<RadioButton> rbList = new ArrayList<RadioButton>();
-            for (String addres : addresses) {
-                RadioButton rb = new RadioButton("address", addres);
-                vp.add(rb);
-                rbList.add(rb);
-            }
-            Button button = new Button("OK");
-            button.addClickHandler(new ClickHandler() {
-                @Override
-                public void onClick(ClickEvent event) {
-                    // get selected radio button
-                    String text = "";
-                    for (RadioButton radioButton : rbList) {
-                        if (radioButton.getValue()) {
-                            text = radioButton.getText();
-                            break;
-                        }
-                    }
-                    tb.setValue(text);
-                    simplePopup.setVisible(false);
-                    simplePopup.hide();
-                }
-            });
-            vp.add(button);
-            simplePopup.setWidget(vp);
-            simplePopup.setPopupPosition(left, top);
-
-            // Show the popup
-            simplePopup.show();
-
-
-            tb.setValue("updated");
-        }
-    }
-
-    interface CallBack {
-
-        void complete();
-    }
-
-    interface RestCallBack {
-
-        void success();
-
-        void failure();
-    }
-    
-    @UiHandler("leaders")
-    public void leaders(ClickEvent event) {
-        Window.alert("Leaders");
-    }    
 }

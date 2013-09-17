@@ -19,6 +19,9 @@ import org.lds.disasterlocator.client.map.*;
 import com.google.gwt.place.shared.Place;
 import com.google.gwt.user.client.ui.IsWidget;
 import com.google.web.bindery.autobean.shared.AutoBeanFactory;
+import java.util.List;
+import org.lds.disasterlocator.shared.District;
+import org.lds.disasterlocator.shared.Member;
 
 /**
  *
@@ -27,6 +30,9 @@ import com.google.web.bindery.autobean.shared.AutoBeanFactory;
 public interface DistrictView extends IsWidget {
 
     void setActivity(Activity activity);
+    void renderMap();
+    void setDistricts(List<District> districtlist);
+    void setMembers(List<Member> members);
 
     interface Activity {
 
