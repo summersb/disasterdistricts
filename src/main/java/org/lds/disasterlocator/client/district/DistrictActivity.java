@@ -65,6 +65,8 @@ public class DistrictActivity extends AbstractActivity implements DistrictView.A
     public void start(AcceptsOneWidget panel, EventBus eventBus) {
         view.setActivity(this);
         panel.setWidget(view);
+        view.renderMap();
+        view.clearState();
         loadMemberData();
         loadDistrictData();
 

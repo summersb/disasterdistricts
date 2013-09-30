@@ -26,19 +26,25 @@ Uncomment this for XHTML entities
     </ui:style>
     <ui:with field='res' type='org.lds.disasterlocator.client.MyResources'/>
 
-    <g:HTMLPanel>
-        <g:HTMLPanel ui:field="topMenu" styleName="{res.style.panel}">
-            <g:HorizontalPanel>
-                <g:Button ui:field="back">Go to map</g:Button>
-                <g:Button ui:field="leaders">Leaders</g:Button>
-                <g:Button ui:field="alphabetic">Alphabetic</g:Button>
-                <g:ListBox ui:field="district"></g:ListBox>
-            </g:HorizontalPanel>
-        </g:HTMLPanel>
-        <g:HTMLPanel ui:field="map" styleName="{style.mapPanel}" visible="false">
-            <g:Label>Loadin map api</g:Label>
-        </g:HTMLPanel>
-        <g:HTMLPanel ui:field="table"></g:HTMLPanel>
-    </g:HTMLPanel>
+    <g:DockPanel>
+        <g:Dock direction="NORTH" size="100px">
+            <g:HTMLPanel ui:field="topMenu" styleName="{res.style.panel}">
+                <g:HorizontalPanel>
+                    <g:Button ui:field="back">Go to map</g:Button>
+                    <g:Button ui:field="leaders">Leaders</g:Button>
+                    <g:Button ui:field="alphabetic">Alphabetic</g:Button>
+                    <g:ListBox ui:field="district"></g:ListBox>
+                </g:HorizontalPanel>
+            </g:HTMLPanel>
+        </g:Dock>
+        <g:Dock direction="SOUTH" size="1000px">
+            <g:HTMLPanel ui:field="table"></g:HTMLPanel>
+        </g:Dock>
+        <g:Dock direction="CENTER" size="500px">
+            <g:HTMLPanel ui:field="map" styleName="{style.mapPanel}" visible="false">
+                <g:Label>Loadin map api</g:Label>
+            </g:HTMLPanel>
+        </g:Dock>
+    </g:DockPanel>
 
 </ui:UiBinder>

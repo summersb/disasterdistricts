@@ -32,6 +32,7 @@ public interface DistrictView extends IsWidget {
     void setActivity(Activity activity);
     void renderMap();
     void setDistricts(List<District> districtlist);
+    void clearState();
     void setMembers(List<Member> members);
 
     interface Activity {

@@ -36,6 +36,7 @@ import com.google.gwt.maps.client.MapWidget;
 import com.google.gwt.maps.client.base.LatLng;
 import com.google.gwt.maps.client.events.resize.ResizeMapEvent;
 import com.google.gwt.maps.client.events.resize.ResizeMapHandler;
+import com.google.gwt.maps.client.overlays.Circle;
 import com.google.gwt.maps.client.overlays.Marker;
 import com.google.gwt.maps.client.overlays.MarkerOptions;
 import com.google.gwt.maps.client.services.Geocoder;
@@ -133,6 +134,22 @@ public class DistrictViewImpl extends Composite implements
     public void setActivity(Activity activity) {
         this.activity = activity;
     }
+    
+    @Override
+    public void clearState() {
+//        memberList = null;
+//        districtList = null;
+//        for (Circle circle : districtCircleList) {
+//            circle.setMap(null);
+//        }
+//        districtCircleList.clear();
+        Set<String> keySet = markerSet.keySet();
+        for (String key : keySet) {
+            Marker m = markerSet.get(key);
+            m.setMap((MapWidget) null);
+        }
+        markerSet.clear();
+    }    
 
     private String getTextBoxValue(int row, int household) {
         if (household == -1) {
@@ -166,8 +183,9 @@ public class DistrictViewImpl extends Composite implements
     @UiHandler("district")
     public void district(ClickEvent event) {
         table.setVisible(false);
+        clearState();
         map.setVisible(true);
-        renderMap();
+        mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() - 100 + "px");
         plotHouses(district.getSelectedIndex() + 1);
     }
 
@@ -330,38 +348,38 @@ public class DistrictViewImpl extends Composite implements
 
     @Override
     public void renderMap() {
-        MapOptions options = MapOptions.newInstance();
-        options.setZoom(12);
-        options.setMapTypeId(MapTypeId.ROADMAP);
+        if(mapWidget == null){
+            MapOptions options = MapOptions.newInstance();
+            options.setZoom(13);
+            options.setMapTypeId(MapTypeId.ROADMAP);
 
-        mapWidget = new MapWidget(options);
+            mapWidget = new MapWidget(options);
+            map.clear();
 
-        mapWidget.addResizeHandler(new ResizeMapHandler() {
-            @Override
-            public void onEvent(ResizeMapEvent event) {
-                //mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
-            }
-        });
+            map.add(mapWidget);
 
-        //mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
-        mapWidget.setSize("100px", "500px");
+            mapWidget.addResizeHandler(new ResizeMapHandler() {
+                @Override
+                public void onEvent(ResizeMapEvent event) {
+                    mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
+                }
+            });
 
-        Geolocation geolocation = Geolocation.getIfSupported();
-        geolocation.getCurrentPosition(new Callback<Position, PositionError>() {
-            @Override
-            public void onSuccess(Position result) {
-                centerOn(result.getCoordinates());
-            }
+            mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
 
-            @Override
-            public void onFailure(PositionError reason) {
-                Window.alert(reason.getMessage());
-            }
-        });
-        
-        map.clear();
-        map.add(mapWidget);
+            Geolocation geolocation = Geolocation.getIfSupported();
+            geolocation.getCurrentPosition(new Callback<Position, PositionError>() {
+                @Override
+                public void onSuccess(Position result) {
+                    centerOn(result.getCoordinates());
+                }
 
+                @Override
+                public void onFailure(PositionError reason) {
+                    Window.alert(reason.getMessage());
+                }
+            });
+        }
     }
 
     private void centerOn(Position.Coordinates coordinates) {
@@ -434,16 +452,7 @@ public class DistrictViewImpl extends Composite implements
                     markerSet.put(member.getHousehold(), marker);
                     list.add(member);
                 }
-
                 //marker.addClickHandler(new MapViewImpl.MarkerHandler(marker, member));
-            }
-            Set<String> memberHousehold = markerSet.keySet();
-            for (String household : memberHousehold) {
-                if (isLeader(household)) {
-                    Marker marker = markerSet.get(household);
-                    marker.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + LEADER_COLOR);
-                    marker.setZindex(1000);
-                }
             }
             fullTable(list);
         }
