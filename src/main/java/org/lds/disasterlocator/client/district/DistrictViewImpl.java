@@ -181,11 +181,11 @@ public class DistrictViewImpl extends Composite implements
     }
 
     @UiHandler("district")
-    public void district(ClickEvent event) {
+    public void district(ChangeEvent event) {
         table.setVisible(false);
         clearState();
         map.setVisible(true);
-        mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() - 100 + "px");
+        mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() - 150 + "px");
         plotHouses(district.getSelectedIndex() + 1);
     }
 
@@ -361,11 +361,11 @@ public class DistrictViewImpl extends Composite implements
             mapWidget.addResizeHandler(new ResizeMapHandler() {
                 @Override
                 public void onEvent(ResizeMapEvent event) {
-                    mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
+                    mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() - 150 + "px");
                 }
             });
 
-            mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
+            mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() - 150 + "px");
 
             Geolocation geolocation = Geolocation.getIfSupported();
             geolocation.getCurrentPosition(new Callback<Position, PositionError>() {
