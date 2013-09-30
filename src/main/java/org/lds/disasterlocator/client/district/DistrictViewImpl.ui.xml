@@ -22,18 +22,23 @@ Uncomment this for XHTML entities
 <ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
              xmlns:g="urn:import:com.google.gwt.user.client.ui">
     <ui:style>
-        .mapPanel {width: 500px;  height: 200px;}
+        .mapPanel {width: 500px;  height: 500px;}
     </ui:style>
     <ui:with field='res' type='org.lds.disasterlocator.client.MyResources'/>
 
-    <g:HTMLPanel ui:field="topMenu" styleName="{res.style.panel}">
-        <g:Button ui:field="back">Go to map</g:Button>
-        <g:Button ui:field="leaders">Leaders</g:Button>
-        <g:Button ui:field="alphabetic">Alphabetic</g:Button>
-        <g:ListBox ui:field="district"></g:ListBox>
+    <g:HTMLPanel>
+        <g:HTMLPanel ui:field="topMenu" styleName="{res.style.panel}">
+            <g:HorizontalPanel>
+                <g:Button ui:field="back">Go to map</g:Button>
+                <g:Button ui:field="leaders">Leaders</g:Button>
+                <g:Button ui:field="alphabetic">Alphabetic</g:Button>
+                <g:ListBox ui:field="district"></g:ListBox>
+            </g:HorizontalPanel>
+        </g:HTMLPanel>
         <g:HTMLPanel ui:field="map" styleName="{style.mapPanel}" visible="false">
             <g:Label>Loadin map api</g:Label>
         </g:HTMLPanel>
         <g:HTMLPanel ui:field="table"></g:HTMLPanel>
     </g:HTMLPanel>
+
 </ui:UiBinder>
