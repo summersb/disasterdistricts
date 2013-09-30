@@ -97,7 +97,7 @@ public class DistrictViewImpl extends Composite implements
     private static final Logger logger = Logger.getLogger(DistrictViewImpl.class.getName());
     private static MapUiBinder uiBinder = GWT.create(MapUiBinder.class);
     @UiField
-    HTMLPanel panel;
+    HTMLPanel topMenu;
     @UiField
     Button back;
     @UiField
@@ -187,7 +187,7 @@ public class DistrictViewImpl extends Composite implements
 
     private void leaderTable() {
         tableHeight = districtList.size();
-        tableWidth = 2;
+        tableWidth = 3;
 
         grid = new Grid(tableHeight + 1, tableWidth);
 
@@ -196,6 +196,16 @@ public class DistrictViewImpl extends Composite implements
 
         label = new Label("Leader");
         grid.setWidget(0, 1, label);
+        
+        label = new Label("Household Count");
+        grid.setWidget(0, 2, label);
+        
+        int[] Count;
+        Count = new int[districtList.size() + 1];
+        for(Member member : memberList)
+        {
+            Count[member.getDistrict()]++;
+        }
 
         for (int i = 0; i < districtList.size(); i++) {
             District district = districtList.get(i);
@@ -207,6 +217,10 @@ public class DistrictViewImpl extends Composite implements
             cell = district.getLeader().getHousehold();
             label = new Label(cell);
             grid.setWidget(i + 1, 1, label);
+            
+            cell = String.valueOf(Count[district.getId()]);
+            label = new Label(cell);
+            grid.setWidget(i + 1, 2, label);
 
         }
         map.setVisible(false);
@@ -264,7 +278,7 @@ public class DistrictViewImpl extends Composite implements
         tableHeight = list.size();
         tableWidth = 4;
 
-        grid = new Grid(tableHeight + 1, tableWidth);
+        grid = new Grid(tableHeight + 2, tableWidth);
 
         Label label = new Label("District #");
         grid.setWidget(0, 0, label);
@@ -277,8 +291,8 @@ public class DistrictViewImpl extends Composite implements
         
         label = new Label("Phone");
         grid.setWidget(0, 3, label);
-
-        for (int i = 0; i < list.size(); i++) {
+        int i;
+        for (i = 0; i < list.size(); i++) {
             Member member = list.get(i);
             String cell;
             cell = String.valueOf(member.getDistrict());
@@ -298,6 +312,16 @@ public class DistrictViewImpl extends Composite implements
             grid.setWidget(i + 1, 3, label);
 
         }
+        
+        String cell;
+        cell = "Household Count";
+        label = new Label(cell);
+        grid.setWidget(i + 1, 0, label);
+
+        cell = String.valueOf(i);
+        label = new Label(cell);
+        grid.setWidget(i + 1, 1, label);
+            
         table.setVisible(true);
         table.clear();
         table.add(grid);
@@ -311,17 +335,16 @@ public class DistrictViewImpl extends Composite implements
         options.setMapTypeId(MapTypeId.ROADMAP);
 
         mapWidget = new MapWidget(options);
-        map.clear();
-        map.add(mapWidget);
 
         mapWidget.addResizeHandler(new ResizeMapHandler() {
             @Override
             public void onEvent(ResizeMapEvent event) {
-                mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
+                //mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
             }
         });
 
-        mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
+        //mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
+        mapWidget.setSize("100px", "500px");
 
         Geolocation geolocation = Geolocation.getIfSupported();
         geolocation.getCurrentPosition(new Callback<Position, PositionError>() {
@@ -335,6 +358,9 @@ public class DistrictViewImpl extends Composite implements
                 Window.alert(reason.getMessage());
             }
         });
+        
+        map.clear();
+        map.add(mapWidget);
 
     }
 
