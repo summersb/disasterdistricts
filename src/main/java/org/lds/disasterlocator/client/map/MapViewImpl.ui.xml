@@ -26,16 +26,16 @@ Uncomment this for XHTML entities
         .topMenu {width: 100%; heigth: 50px;}
     </ui:style>
     <g:HTMLPanel>
-        <g:HTMLPanel ui:field="topMenu" styleName="{style.mapPanel}">
+        <g:HTMLPanel ui:field="topMenu" styleName="{style.topMenu}">
             <g:HorizontalPanel>
                 <g:Button ui:field="load">Load Data</g:Button>
                 <g:Button ui:field="compute">Compute District Members</g:Button>
                  <g:Button ui:field="reports">Reports</g:Button>
-                <g:CheckBox ui:field="districtCircle">Show District Circles</g:CheckBox>   
+                <g:CheckBox ui:field="districtCircle">Show District Circles</g:CheckBox>
             </g:HorizontalPanel>
         </g:HTMLPanel>
         <g:HTMLPanel ui:field="map" styleName="{style.mapPanel}">
-            <g:Label>Loadin map api</g:Label>
+            <g:Label>Loading map api</g:Label>
         </g:HTMLPanel>
     </g:HTMLPanel>
 </ui:UiBinder>

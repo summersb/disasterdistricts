@@ -98,36 +98,38 @@ public class MapViewImpl extends Composite implements MapView {
 
     @Override
     public void renderMap() {
+        if(mapWidget == null){
         MapOptions options = MapOptions.newInstance();
-        options.setZoom(13);
-        options.setMapTypeId(MapTypeId.ROADMAP);
+            options.setZoom(13);
+            options.setMapTypeId(MapTypeId.ROADMAP);
 
-        mapWidget = new MapWidget(options);
-        map.clear();
-        map.add(mapWidget);
+            mapWidget = new MapWidget(options);
+            map.clear();
 
-        mapWidget.addResizeHandler(new ResizeMapHandler() {
-            @Override
-            public void onEvent(ResizeMapEvent event) {
-                mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
-            }
-        });
+            map.add(mapWidget);
 
-        mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
+            mapWidget.addResizeHandler(new ResizeMapHandler() {
+                @Override
+                public void onEvent(ResizeMapEvent event) {
+                    mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
+                }
+            });
 
-        Geolocation geolocation = Geolocation.getIfSupported();
-        geolocation.getCurrentPosition(new Callback<Position, PositionError>() {
-            @Override
-            public void onSuccess(Position result) {
-                centerOn(result.getCoordinates());
-            }
+            mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
 
-            @Override
-            public void onFailure(PositionError reason) {
-                Window.alert(reason.getMessage());
-            }
-        });
+            Geolocation geolocation = Geolocation.getIfSupported();
+            geolocation.getCurrentPosition(new Callback<Position, PositionError>() {
+                @Override
+                public void onSuccess(Position result) {
+                    centerOn(result.getCoordinates());
+                }
 
+                @Override
+                public void onFailure(PositionError reason) {
+                    Window.alert(reason.getMessage());
+                }
+            });
+        }
     }
 
     private void centerOn(Position.Coordinates coordinates) {
@@ -329,14 +331,6 @@ public class MapViewImpl extends Composite implements MapView {
 
                 marker.addClickHandler(new MarkerHandler(marker, member));
             }
-//            Set<String> memberHousehold = markerSet.keySet();
-//            for (String household : memberHousehold) {
-//                if (isLeader(household)) {
-//                    Marker marker = markerSet.get(household);
-//                    marker.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + LEADER_COLOR);
-//                    marker.setZindex(1000);
-//                }
-//            }
         }
     }
 

@@ -63,6 +63,7 @@ public class MapActivity extends AbstractActivity implements MapView.Activity {
         view.setActivity(this);
         panel.setWidget((IsWidget) view);
         view.renderMap();
+        view.clearState();
         loadMemberData();
         loadDistrictData();
     }
