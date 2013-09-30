@@ -17,76 +17,42 @@ package org.lds.disasterlocator.client.district;
 
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.JsArray;
-import com.google.gwt.event.dom.client.ChangeEvent;
-import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.geolocation.client.Geolocation;
 import com.google.gwt.geolocation.client.Position;
 import com.google.gwt.geolocation.client.PositionError;
-import com.google.gwt.http.client.Request;
-import com.google.gwt.http.client.RequestBuilder;
-import com.google.gwt.http.client.RequestCallback;
-import com.google.gwt.http.client.RequestException;
-import com.google.gwt.http.client.Response;
 import com.google.gwt.maps.client.MapOptions;
 import com.google.gwt.maps.client.MapTypeId;
 import com.google.gwt.maps.client.MapWidget;
 import com.google.gwt.maps.client.base.LatLng;
 import com.google.gwt.maps.client.events.resize.ResizeMapEvent;
 import com.google.gwt.maps.client.events.resize.ResizeMapHandler;
-import com.google.gwt.maps.client.overlays.Circle;
 import com.google.gwt.maps.client.overlays.Marker;
 import com.google.gwt.maps.client.overlays.MarkerOptions;
-import com.google.gwt.maps.client.services.Geocoder;
-import com.google.gwt.maps.client.services.GeocoderGeometry;
-import com.google.gwt.maps.client.services.GeocoderRequest;
-import com.google.gwt.maps.client.services.GeocoderRequestHandler;
-import com.google.gwt.maps.client.services.GeocoderResult;
-import com.google.gwt.maps.client.services.GeocoderStatus;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.DecoratedPopupPanel;
-import com.google.gwt.user.client.ui.FileUpload;
-import com.google.gwt.user.client.ui.FormPanel;
 import com.google.gwt.user.client.ui.Grid;
-import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
-import com.google.gwt.user.client.ui.RadioButton;
 import com.google.gwt.user.client.ui.TextBox;
-import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
-import com.google.web.bindery.autobean.shared.AutoBean;
-import com.google.web.bindery.autobean.shared.AutoBeanCodex;
-import com.google.web.bindery.autobean.shared.AutoBeanFactory;
-import com.google.web.bindery.event.shared.HandlerRegistration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lds.disasterlocator.client.MyResources;
 import org.lds.disasterlocator.client.map.MapPlace;
-import org.lds.disasterlocator.client.map.MapViewImpl;
 import org.lds.disasterlocator.shared.District;
-import org.lds.disasterlocator.shared.File;
 import org.lds.disasterlocator.shared.Member;
-import org.lds.disasterlocator.shared.MyConstants;
-import org.lds.disasterlocator.shared.Row;
 
 /**
  *
@@ -134,7 +100,7 @@ public class DistrictViewImpl extends Composite implements
     public void setActivity(Activity activity) {
         this.activity = activity;
     }
-    
+
     @Override
     public void clearState() {
 //        memberList = null;
@@ -149,7 +115,7 @@ public class DistrictViewImpl extends Composite implements
             m.setMap((MapWidget) null);
         }
         markerSet.clear();
-    }    
+    }
 
     private String getTextBoxValue(int row, int household) {
         if (household == -1) {
@@ -214,10 +180,10 @@ public class DistrictViewImpl extends Composite implements
 
         label = new Label("Leader");
         grid.setWidget(0, 1, label);
-        
+
         label = new Label("Household Count");
         grid.setWidget(0, 2, label);
-        
+
         int[] Count;
         Count = new int[districtList.size() + 1];
         for(Member member : memberList)
@@ -235,7 +201,7 @@ public class DistrictViewImpl extends Composite implements
             cell = district.getLeader().getHousehold();
             label = new Label(cell);
             grid.setWidget(i + 1, 1, label);
-            
+
             cell = String.valueOf(Count[district.getId()]);
             label = new Label(cell);
             grid.setWidget(i + 1, 2, label);
@@ -303,10 +269,10 @@ public class DistrictViewImpl extends Composite implements
 
         label = new Label("Household");
         grid.setWidget(0, 1, label);
-        
+
         label = new Label("Address");
         grid.setWidget(0, 2, label);
-        
+
         label = new Label("Phone");
         grid.setWidget(0, 3, label);
         int i;
@@ -320,17 +286,17 @@ public class DistrictViewImpl extends Composite implements
             cell = member.getHousehold();
             label = new Label(cell);
             grid.setWidget(i + 1, 1, label);
-            
+
             cell = member.getAddress();
             label = new Label(cell);
             grid.setWidget(i + 1, 2, label);
-            
+
             cell = member.getPhone();
             label = new Label(cell);
             grid.setWidget(i + 1, 3, label);
 
         }
-        
+
         String cell;
         cell = "Household Count";
         label = new Label(cell);
@@ -339,7 +305,7 @@ public class DistrictViewImpl extends Composite implements
         cell = String.valueOf(i);
         label = new Label(cell);
         grid.setWidget(i + 1, 1, label);
-            
+
         table.setVisible(true);
         table.clear();
         table.add(grid);
@@ -429,7 +395,7 @@ public class DistrictViewImpl extends Composite implements
         if (memberList != null && districtList != null) {
             List<Member> list;
             list = new ArrayList<Member>();
-            
+
             for (final Member member : memberList) {
                 LatLng center = LatLng.newInstance(member.getLat(), member.getLng());
                 MarkerOptions options = MarkerOptions.newInstance();
