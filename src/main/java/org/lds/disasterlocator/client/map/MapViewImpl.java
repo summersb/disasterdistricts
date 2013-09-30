@@ -15,19 +15,17 @@
  */
 package org.lds.disasterlocator.client.map;
 
-import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.geolocation.client.Geolocation;
 import com.google.gwt.geolocation.client.Position;
-import com.google.gwt.geolocation.client.PositionError;
 import com.google.gwt.maps.client.MapOptions;
 import com.google.gwt.maps.client.MapTypeId;
 import com.google.gwt.maps.client.MapWidget;
 import com.google.gwt.maps.client.base.LatLng;
+import com.google.gwt.maps.client.base.LatLngBounds;
 import com.google.gwt.maps.client.events.MouseEvent;
 import com.google.gwt.maps.client.events.click.ClickMapEvent;
 import com.google.gwt.maps.client.events.click.ClickMapHandler;
@@ -116,19 +114,6 @@ public class MapViewImpl extends Composite implements MapView {
             });
 
             mapWidget.setSize(Window.getClientWidth() + "px", Window.getClientHeight() + "px");
-
-            Geolocation geolocation = Geolocation.getIfSupported();
-            geolocation.getCurrentPosition(new Callback<Position, PositionError>() {
-                @Override
-                public void onSuccess(Position result) {
-                    centerOn(result.getCoordinates());
-                }
-
-                @Override
-                public void onFailure(PositionError reason) {
-                    Window.alert(reason.getMessage());
-                }
-            });
         }
     }
 
@@ -330,7 +315,33 @@ public class MapViewImpl extends Composite implements MapView {
                 markerSet.put(member.getHousehold(), marker);
 
                 marker.addClickHandler(new MarkerHandler(marker, member));
+
             }
+            // zoom map to bounds of markers
+            // get first member
+            Member member = memberList.get(0);
+            double left = member.getLng();
+            double top = member.getLat();
+            double right = member.getLng();
+            double bottom = member.getLat();
+            for (Member m : memberList) {
+                if(m.getLng() < left){
+                    left = m.getLng();
+                }
+                if(m.getLng() > right){
+                    right = m.getLng();
+                }
+                if(m.getLat() > top){
+                    top = m.getLat();
+                }
+                if(m.getLat() < bottom){
+                    bottom = m.getLat();
+                }
+            }
+            LatLng ne = LatLng.newInstance(top, right);
+            LatLng sw = LatLng.newInstance(bottom, left);
+            LatLngBounds b = LatLngBounds.newInstance(sw, ne);
+            mapWidget.panToBounds(b);
         }
     }
 
@@ -394,10 +405,4 @@ public class MapViewImpl extends Composite implements MapView {
         }
     }
 
-    private native void createSpiderdfier()/*-{
-     oms = new OverlappingMarkerSpiderfier(map, {
-     markersWontMove: true,
-     markersWontHide: true}
-     );
-     }-*/;
 }
