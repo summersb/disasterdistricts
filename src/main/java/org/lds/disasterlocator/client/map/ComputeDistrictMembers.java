@@ -112,7 +112,7 @@ public class ComputeDistrictMembers {
                 double distance = SphericalUtils.computeDistanceBetween(leaderLatLng, memberlatlng);
                 if(distance < 2000){
                     if (member.getAuto()) {
-                        if (!member.getHousehold().equals(leader.getHousehold())) {
+                        if(memberNotLeader(member, list.getDistricts())){
                             memberArray.push(memberlatlng);
                         }
                     }
@@ -131,6 +131,16 @@ public class ComputeDistrictMembers {
                 Logger.getLogger(ComputeDistrictMembers.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+
+    private boolean memberNotLeader(Member member, List<District> distList) {
+        for (District district : distList) {
+            // TODO should also check for assistant
+            if(district.getLeader() != null && member.getHousehold().equals(district.getLeader().getHousehold())){
+                return false;
+            }
+        }
+        return true;
     }
 
     private class DistanceCallBackHandler implements RequestCallback {

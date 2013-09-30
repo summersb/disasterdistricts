@@ -20,14 +20,11 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.RollbackException;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -64,6 +61,7 @@ public class DistanceProxyService {
 
     private static final Logger logger = Logger.getLogger(DistanceProxyService.class.getName());
     private final EntityManagerFactory emf;
+
     interface URLProvider{
         void setURL(String url);
         InputStream openStream() throws IOException;
@@ -254,7 +252,10 @@ public class DistanceProxyService {
                 // member is not set for auto assignment, skip them
                 continue;
             }
-
+            if(memberIsLeader(memberJpa, districtList)){
+                // member is leader don't reassign
+                continue;
+            }
             TypedQuery<DistanceJpa> distQuery = em.createNamedQuery("Distance.byClosest", DistanceJpa.class);
             distQuery.setParameter("memberLat", memberJpa.getLat());
             distQuery.setParameter("memberLng", memberJpa.getLng());
@@ -346,8 +347,17 @@ public class DistanceProxyService {
                 destinations.add(memberLatLng);
             }
             // get distances
-            logger.log(Level.FINE, "Getting distance for {0} MemberCount: {1}", new Object[]{leader.getHousehold(), destinations.size()});
+            logger.log(Level.INFO, "Getting distance for {0} MemberCount: {1}", new Object[]{leader.getHousehold(), destinations.size()});
             getDistanceMatrix(dmr);
         }
+    }
+
+    private boolean memberIsLeader(MemberJpa memberJpa, List<DistrictJpa> districtList) {
+        for (DistrictJpa dist : districtList) {
+            if(dist.getLeader() != null && memberJpa.getHousehold().equals(dist.getLeader().getHousehold())){
+                return true;
+            }
+        }
+        return false;
     }
 }
