@@ -47,6 +47,6 @@ public class AppActivityMapper implements ActivityMapper {
         } else if (place instanceof DistrictPlace) {
             return new DistrictActivity(clientFactory);
         }
-        return null;
+        return new MapActivity(clientFactory);
     }
 }

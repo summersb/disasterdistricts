@@ -30,6 +30,7 @@ package org.lds.disasterlocator.client;
 
 import com.google.gwt.place.shared.PlaceHistoryMapper;
 import com.google.gwt.place.shared.WithTokenizers;
+import org.lds.disasterlocator.client.district.DistrictPlace;
 import org.lds.disasterlocator.client.load.LoadPlace;
 import org.lds.disasterlocator.client.map.MapPlace;
 
@@ -37,7 +38,7 @@ import org.lds.disasterlocator.client.map.MapPlace;
  *
  * @author Bert W Summers
  */
-@WithTokenizers({MapPlace.Tokenizer.class, LoadPlace.Tokenizer.class})
+@WithTokenizers({MapPlace.Tokenizer.class, LoadPlace.Tokenizer.class, DistrictPlace.Tokenizer.class})
 public interface AppPlaceHistoryMapper extends PlaceHistoryMapper{
 
 }
