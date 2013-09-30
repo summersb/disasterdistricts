@@ -88,7 +88,7 @@ public class MapViewImpl extends Composite implements MapView {
     private List<Member> memberList;
     private List<District> districtList;
     private Map<String, Marker> markerSet = new HashMap<String, Marker>();
-    private static final String LEADER_COLOR = "L|00ff00|000000";
+    private static final String LEADER_COLOR = "|00FF00|000000";
     private static final String MEMBER_COLOR = "|FF0000|000000";
     private List<Circle> districtCircleList = new ArrayList<Circle>();
 
@@ -317,7 +317,7 @@ public class MapViewImpl extends Composite implements MapView {
                     // we can set district colors here also
                     String color = member.getDistrict() + MEMBER_COLOR;
                     if (isLeader(member.getHousehold())) {
-                        color = LEADER_COLOR;
+                        color = member.getDistrict() + LEADER_COLOR;
                         options.setZindex(1000);
                     }
                     options.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + color);
@@ -329,14 +329,14 @@ public class MapViewImpl extends Composite implements MapView {
 
                 marker.addClickHandler(new MarkerHandler(marker, member));
             }
-            Set<String> memberHousehold = markerSet.keySet();
-            for (String household : memberHousehold) {
-                if (isLeader(household)) {
-                    Marker marker = markerSet.get(household);
-                    marker.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + LEADER_COLOR);
-                    marker.setZindex(1000);
-                }
-            }
+//            Set<String> memberHousehold = markerSet.keySet();
+//            for (String household : memberHousehold) {
+//                if (isLeader(household)) {
+//                    Marker marker = markerSet.get(household);
+//                    marker.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + LEADER_COLOR);
+//                    marker.setZindex(1000);
+//                }
+//            }
         }
     }
 
