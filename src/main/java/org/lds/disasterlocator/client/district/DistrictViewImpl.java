@@ -26,6 +26,7 @@ import com.google.gwt.maps.client.MapOptions;
 import com.google.gwt.maps.client.MapTypeId;
 import com.google.gwt.maps.client.MapWidget;
 import com.google.gwt.maps.client.base.LatLng;
+import com.google.gwt.maps.client.base.LatLngBounds;
 import com.google.gwt.maps.client.events.resize.ResizeMapEvent;
 import com.google.gwt.maps.client.events.resize.ResizeMapHandler;
 import com.google.gwt.maps.client.overlays.Marker;
@@ -172,7 +173,7 @@ public class DistrictViewImpl extends Composite implements
 
     private void leaderTable() {
         tableHeight = districtList.size();
-        tableWidth = 3;
+        tableWidth = 4;
 
         grid = new Grid(tableHeight + 1, tableWidth);
 
@@ -184,6 +185,10 @@ public class DistrictViewImpl extends Composite implements
 
         label = new Label("Household Count");
         grid.setWidget(0, 2, label);
+        
+        label = new Label("Email");
+        grid.setWidget(0, 2, label);
+
 
         int[] Count;
         Count = new int[districtList.size() + 1];
@@ -206,7 +211,10 @@ public class DistrictViewImpl extends Composite implements
             cell = String.valueOf(Count[district.getId()]);
             label = new Label(cell);
             grid.setWidget(i + 1, 2, label);
-
+            
+            cell = district.getLeader().getEmail();
+            label = new Label(cell);
+            grid.setWidget(i + 1, 3, label);
         }
         map.setVisible(false);
         table.setVisible(true);
@@ -228,29 +236,8 @@ public class DistrictViewImpl extends Composite implements
 
         Collections.sort(memberList, new HouseholdSort());
 
-        tableHeight = memberList.size();
-        tableWidth = 2;
+        fullTable(memberList);
 
-        grid = new Grid(tableHeight + 1, tableWidth);
-
-        Label label = new Label("District #");
-        grid.setWidget(0, 0, label);
-
-        label = new Label("Household");
-        grid.setWidget(0, 1, label);
-
-        for (int i = 0; i < memberList.size(); i++) {
-            Member member = memberList.get(i);
-            String cell;
-            cell = String.valueOf(member.getDistrict());
-            label = new Label(cell);
-            grid.setWidget(i + 1, 0, label);
-
-            cell = member.getHousehold();
-            label = new Label(cell);
-            grid.setWidget(i + 1, 1, label);
-
-        }
         map.setVisible(false);
         table.setVisible(true);
         table.clear();
@@ -408,7 +395,8 @@ public class DistrictViewImpl extends Composite implements
                     if (isLeader(member.getHousehold())) {
                         color = LEADER_COLOR;
                         options.setZindex(1000);
-                        mapWidget.setCenter(center);
+                        //mapWidget.setCenter(center);
+                        //mapWidget.panTo(center);
                     }
                     options.setIcon("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + color);
                 }
@@ -421,6 +409,33 @@ public class DistrictViewImpl extends Composite implements
                 }
                 //marker.addClickHandler(new MapViewImpl.MarkerHandler(marker, member));
             }
+            
+            // zoom map to bounds of markers
+            // get first member
+            Member member = list.get(0);
+            double left = member.getLng();
+            double top = member.getLat();
+            double right = member.getLng();
+            double bottom = member.getLat();
+            for (Member m : list) {
+                if(m.getLng() < left){
+                    left = m.getLng();
+                }
+                if(m.getLng() > right){
+                    right = m.getLng();
+                }
+                if(m.getLat() > top){
+                    top = m.getLat();
+                }
+                if(m.getLat() < bottom){
+                    bottom = m.getLat();
+                }
+            }
+            LatLng ne = LatLng.newInstance(top, right);
+            LatLng sw = LatLng.newInstance(bottom, left);
+            LatLngBounds b = LatLngBounds.newInstance(sw, ne);
+            mapWidget.panToBounds(b);
+            
             fullTable(list);
         }
     }
