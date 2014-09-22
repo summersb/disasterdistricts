@@ -206,7 +206,9 @@ public class MapViewImpl extends Composite implements MapView {
             horiz.add(lbl);
             final ListBox lb = new ListBox(false);
             for (District district : districtList) {
-                lb.addItem(district.getLeader().getHousehold(), Integer.toString(district.getId()));
+                if(district.getLeader() != null){
+                    lb.addItem(district.getLeader().getHousehold(), Integer.toString(district.getId()));
+                }
             }
             // find the right district to mark as selected
             for (int i = 0; i < lb.getItemCount(); i++) {
@@ -285,7 +287,7 @@ public class MapViewImpl extends Composite implements MapView {
     private boolean isLeader(String household) {
         if (districtList != null) {
             for (District district : districtList) {
-                if (district.getLeader().getHousehold().equals(household)) {
+                if (district.getLeader() != null && district.getLeader().getHousehold().equals(household)) {
                     return true;
                 }
             }
