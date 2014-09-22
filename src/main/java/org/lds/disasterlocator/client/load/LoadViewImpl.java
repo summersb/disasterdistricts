@@ -92,7 +92,7 @@ public class LoadViewImpl extends Composite implements LoadView {
     private int tableHeight;
     private int tableWidth;
     private Grid grid;
-    private int household = -1, address = -1, city = -1, state = -1, zip = -1, phone = -1, email=-1;
+    private int household = -1, address = -1, city = -1, state = -1, zip = -1, phone = -1, email=-1, lat=-1, lng=-1;
     private List<HandlerRegistration> addressHandlers = new ArrayList<HandlerRegistration>();
 
     public LoadViewImpl() {
@@ -109,8 +109,10 @@ public class LoadViewImpl extends Composite implements LoadView {
         // add heading row to select which column is what
         ListBox lb = new ListBox(false);
         lb.addItem("None");
+        lb.addItem("Longitute");
+        lb.addItem("Latitude");
         lb.addItem("Household (unique)");
-        lb.addItem("Address");
+        lb.addItem("Street");
         lb.addItem("City");
         lb.addItem("State");
         lb.addItem("Zip Code");
@@ -130,6 +132,15 @@ public class LoadViewImpl extends Composite implements LoadView {
             return "";
         }
         return tb.getValue();
+    }
+
+    private Double getTextBoxDoubleValue(int row, int household){
+        String val = getTextBoxValue(row, household);
+        try{
+            return Double.parseDouble(val);
+        }catch(NumberFormatException e){
+            return 0.0;
+        }
     }
 
     interface MapUiBinder extends UiBinder<Widget, LoadViewImpl> {
@@ -178,18 +189,22 @@ public class LoadViewImpl extends Composite implements LoadView {
             ListBox listBox = listBoxList.get(i);
             int index = listBox.getSelectedIndex();
             if (index == 1) {
-                household = i;
+                lng = i;
             } else if (index == 2) {
-                address = i;
+                lat = i;
             } else if (index == 3) {
-                city = i;
+                household = i;
             } else if (index == 4) {
-                state = i;
+                address = i;
             } else if (index == 5) {
-                zip = i;
-            } else if (index == 7) {
-                phone = i;
+                city = i;
             } else if (index == 6) {
+                state = i;
+            } else if (index == 7) {
+                zip = i;
+            } else if (index == 8) {
+                phone = i;
+            } else if (index == 9) {
                 email = i;
             }
         }
@@ -202,6 +217,13 @@ public class LoadViewImpl extends Composite implements LoadView {
             for (int row = 1; row <= tableHeight; row++) {
                 AutoBean<Member> memberAB = factory.create(Member.class);
                 final Member member = memberAB.as();
+                int cells = grid.getCellCount(row);
+                if(cells < household){
+                    // row does not have correct number of cells
+                    grid.removeRow(row);
+                    row--;
+                    continue;
+                }
                 TextBox tb = (TextBox) grid.getWidget(row, household);
                 if(tb == null){
                     // must have been a blank line in the source file
@@ -216,6 +238,10 @@ public class LoadViewImpl extends Composite implements LoadView {
                 member.setZip(getTextBoxValue(row, zip));
                 member.setEmail(getTextBoxValue(row, email));
                 member.setPhone(getTextBoxValue(row, phone));
+                if(lat != -1 && lng != -1){
+                    member.setLat(getTextBoxDoubleValue(row, lat));
+                    member.setLng(getTextBoxDoubleValue(row, lng));
+                }
 
                 queue.add(member);
             }
@@ -265,6 +291,7 @@ public class LoadViewImpl extends Composite implements LoadView {
         for (int i = 0; i < tableWidth; i++) {
             grid.setWidget(0, i, createList());
         }
+        // TODO attempt to match header row
         table.add(grid);
     }
 
@@ -336,18 +363,7 @@ public class LoadViewImpl extends Composite implements LoadView {
                     member.setLat(location.getLatitude());
                     member.setLng(location.getLongitude());
                     // when geocode is complete send row to server with lat/long to insert record
-                    AutoBean<Member> memberAB = factory.create(Member.class, member);
-                    String json = AutoBeanCodex.encode(memberAB).getPayload();
-                    try {
-                        RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, MyConstants.REST_URL + "member");
-                        rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
-                        rb.sendRequest(json, new MyRequestCallbackHandler(this));
-                    } catch (RequestException ex) {
-                        logger.log(Level.SEVERE, "Failed to persist member" + member.getHousehold() + ":" + member.getAddress(), ex);
-                        grid.getRowFormatter().setStyleName(row, res.style().failed());
-                        row++;
-                        end();
-                    }
+                    saveMember(member);
                 }
             } else if ("OVER_QUERY_LIMIT".equals(status.toString())) {
                 // need to delay here
@@ -372,10 +388,14 @@ public class LoadViewImpl extends Composite implements LoadView {
             if (member == null) {
                 callback.complete();
             }else{
-                Geocoder geocoder = Geocoder.newInstance();
-                GeocoderRequest geoRequest = GeocoderRequest.newInstance();
-                geoRequest.setAddress(member.getAddress());
-                geocoder.geocode(geoRequest, this);
+                if(member.getLng() == 0.0){
+                    Geocoder geocoder = Geocoder.newInstance();
+                    GeocoderRequest geoRequest = GeocoderRequest.newInstance();
+                    geoRequest.setAddress(member.getAddress());
+                    geocoder.geocode(geoRequest, this);
+                }else{
+                    saveMember(member);
+                }
             }
         }
 
@@ -398,6 +418,21 @@ public class LoadViewImpl extends Composite implements LoadView {
             grid.getRowFormatter().setStyleName(row, res.style().duplicate());
             row++;
             end();
+        }
+
+        private void saveMember(Member member) {
+            AutoBean<Member> memberAB = factory.create(Member.class, member);
+            String json = AutoBeanCodex.encode(memberAB).getPayload();
+            try {
+                RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, MyConstants.REST_URL + "member");
+                rb.setHeader(MyConstants.CONTENT_TYPE, MyConstants.APPLICATION_JSON);
+                rb.sendRequest(json, new MyRequestCallbackHandler(this));
+            } catch (RequestException ex) {
+                logger.log(Level.SEVERE, "Failed to persist member" + member.getHousehold() + ":" + member.getAddress(), ex);
+                grid.getRowFormatter().setStyleName(row, res.style().failed());
+                row++;
+                end();
+               }
         }
     }
 
