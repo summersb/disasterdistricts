@@ -1,0 +1,1 @@
+Assign houses within a geographic area for status reporting
